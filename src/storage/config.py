@@ -22,9 +22,15 @@ class StorageConfig:
     @classmethod
     def from_env(cls) -> StorageConfig:
         """Create StorageConfig from standard environment variables."""
+        raw_url = os.getenv("SUPABASE_URL")
+        raw_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("SUPABASE_KEY")
+        
+        url = raw_url.strip().strip("'\"") if raw_url else None
+        key = raw_key.strip().strip("'\"") if raw_key else None
+        
         return cls(
-            supabase_url=os.getenv("SUPABASE_URL"),
-            supabase_key=os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("SUPABASE_KEY"),
+            supabase_url=url,
+            supabase_key=key,
             timeout_seconds=float(os.getenv("STORAGE_TIMEOUT_SECONDS", "10.0")),
         )
 
