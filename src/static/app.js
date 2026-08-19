@@ -21,10 +21,18 @@ async function initDashboard() {
     return;
   }
 
-  await loadJobCount();
-  await loadSourceHealth();
-  await loadLatestRun();
-  await loadJobs(currentPage);
+  const hasVisited = localStorage.getItem("acdyon_has_visited");
+
+  if (!hasVisited) {
+    localStorage.setItem("acdyon_has_visited", "true");
+    // New device/browser opening for the first time: trigger immediate ingestion
+    await triggerIngestion(true);
+  } else {
+    await loadJobCount();
+    await loadSourceHealth();
+    await loadLatestRun();
+    await loadJobs(currentPage);
+  }
 }
 
 async function loadJobCount() {
@@ -305,27 +313,29 @@ function nextPage() {
   loadJobs(currentPage + 1);
 }
 
-async function triggerIngestion() {
+async function triggerIngestion(isAuto = false) {
   const btn = document.getElementById("btn-ingest");
   const errorBanner = document.getElementById("error-banner");
   const errorMessage = document.getElementById("error-message");
   
-  // Track client request frequency (sliding 60s window)
-  const now = Date.now();
-  ingestionRequestTimes = ingestionRequestTimes.filter(t => now - t < 60000);
-  ingestionRequestTimes.push(now);
+  if (!isAuto) {
+    // Track client request frequency (sliding 60s window)
+    const now = Date.now();
+    ingestionRequestTimes = ingestionRequestTimes.filter(t => now - t < 60000);
+    ingestionRequestTimes.push(now);
 
-  const rateLimitBanner = document.getElementById("rate-limit-banner");
-  const rateLimitMsg = document.getElementById("rate-limit-message");
+    const rateLimitBanner = document.getElementById("rate-limit-banner");
+    const rateLimitMsg = document.getElementById("rate-limit-message");
 
-  if (ingestionRequestTimes.length > 3) {
-    if (rateLimitBanner && rateLimitMsg) {
-      rateLimitMsg.textContent = "High request frequency: We advise checking back every 15–30 minutes for new jobs, as We Work Remotely publishes updates periodically throughout the day.";
-      rateLimitBanner.classList.remove("hidden");
-    }
-  } else {
-    if (rateLimitBanner) {
-      rateLimitBanner.classList.add("hidden");
+    if (ingestionRequestTimes.length > 3) {
+      if (rateLimitBanner && rateLimitMsg) {
+        rateLimitMsg.textContent = "High request frequency: We advise checking back every 15–30 minutes for new jobs, as We Work Remotely publishes updates periodically throughout the day.";
+        rateLimitBanner.classList.remove("hidden");
+      }
+    } else {
+      if (rateLimitBanner) {
+        rateLimitBanner.classList.add("hidden");
+      }
     }
   }
 
@@ -368,6 +378,12 @@ async function triggerIngestion() {
     await loadLatestRun();
     await loadJobs(1);
 
+    // Set freshness timestamp to the moment of completion
+    const lastSuccessEl = document.getElementById("health-last-success");
+    if (lastSuccessEl) {
+      lastSuccessEl.textContent = new Date().toLocaleString();
+    }
+
   } catch (err) {
     console.error("Ingestion failed:", err);
     errorBanner.classList.remove("hidden");
@@ -375,6 +391,13 @@ async function triggerIngestion() {
       ? "Too many requests received. Please wait a moment before triggering ingestion again."
       : (err.message || "Failed to complete ingestion request.");
     errorMessage.textContent = friendlyMsg;
+
+    // In case of error on initial auto-load, load existing state
+    await loadJobCount();
+    await loadSourceHealth();
+    await loadLatestRun();
+    await loadJobs(1);
+
     if (cachedJobs.length > 0) {
       appState = "stale";
       updateStaleIndicator();
