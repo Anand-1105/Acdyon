@@ -201,12 +201,24 @@ To initialize a new PostgreSQL / Supabase instance, execute the idempotent migra
 Run the single-process FastAPI application server using Uvicorn:
 
 ```bash
-uvicorn src.api.app:app --host 0.0.0.0 --port 8000 --workers 1
+uvicorn src.api.app:app --host 0.0.0.0 --port $PORT --workers 1
 ```
 
-### 5. Running Automated Tests
+### 5. Live Production Render Deployment
 
-Run the complete test suite (**296 tests**):
+* **Live Service URL**: [https://acdyon-backend-72ph.onrender.com](https://acdyon-backend-72ph.onrender.com)
+* **Build Command**: `pip install .`
+* **Start Command**: `uvicorn src.api.app:app --host 0.0.0.0 --port $PORT`
+* **Health Check Path**: `/health`
+* **Database Backend**: Supabase PostgreSQL (`https://zigoelrrclmahfeefrhh.supabase.co`)
+* **Environment Variables Configured**:
+  * `SUPABASE_URL`: Supabase project connection URL
+  * `SUPABASE_SERVICE_ROLE_KEY`: Supabase server-side authorization key
+  * `LOG_LEVEL`: `INFO`
+
+### 6. Running Automated Tests
+
+Run the complete test suite (**305 tests**):
 
 ```bash
 pytest tests/ -v
@@ -216,8 +228,8 @@ pytest tests/ -v
 
 ## Operational Demo & Interface Guide
 
-1. **Open Dashboard UI**: Navigate to `http://localhost:8000/` in a web browser.
+1. **Open Dashboard UI**: Navigate to [`https://acdyon-backend-72ph.onrender.com/`](https://acdyon-backend-72ph.onrender.com/) in a web browser.
 2. **Check System Liveness**: Inspect the `API: Online` indicator in the header (backed by `GET /health`).
 3. **Inspect Source Health**: Review the **We Work Remotely · RSS** panel showing provider health (`HEALTHY`), last ingestion timestamp, and total job count.
-4. **Trigger Ingestion**: Click **Ingest latest jobs**. This issues a `POST /api/v1/ingest` call to retrieve, validate, deduplicate, and persist jobs from We Work Remotely RSS.
+4. **Trigger Ingestion**: Click **Ingest latest jobs**. This issues a `POST /api/v1/ingest` call to retrieve, validate, deduplicate, and persist jobs to Supabase PostgreSQL.
 5. **Inspect Telemetry & Jobs**: View real-time run telemetry (Duration, Accepted, Rejected, Duplicates) and browse canonical job listings. Click **Details** on any row to open the metadata drawer.
