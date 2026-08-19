@@ -350,7 +350,10 @@ async function triggerIngestion() {
   } catch (err) {
     console.error("Ingestion failed:", err);
     errorBanner.classList.remove("hidden");
-    errorMessage.textContent = err.message || "Failed to complete ingestion request.";
+    const friendlyMsg = (err.message === "Failed to fetch") 
+      ? "Unable to reach the backend service. Please check network connectivity or backend availability."
+      : (err.message || "Failed to complete ingestion request.");
+    errorMessage.textContent = friendlyMsg;
     if (cachedJobs.length > 0) {
       appState = "stale";
       updateStaleIndicator();

@@ -638,34 +638,11 @@ details[open] > .raw-desc-summary {
   line-height: 1.5;
 }
 
-/* Stale & Offline Banners */
-.stale-banner {
-  background-color: var(--status-degraded-bg);
-  border: 1px solid rgba(245, 158, 11, 0.3);
-  border-radius: 6px;
-  padding: 10px 16px;
-  margin-bottom: 16px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  color: var(--status-degraded-text);
-}
-
-.offline-banner {
-  background-color: var(--status-unreachable-bg);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  border-radius: 6px;
-  padding: 12px 16px;
-  margin-bottom: 16px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  color: var(--status-unreachable-text);
-}
-
-.rate-limit-banner {
+/* Status Banners */
+.offline-banner,
+.stale-banner,
+.rate-limit-banner,
+.error-banner {
   background-color: var(--bg-surface);
   border: 1px solid var(--border-color);
   border-radius: 6px;
@@ -680,23 +657,59 @@ details[open] > .raw-desc-summary {
   transition: all 0.2s ease;
 }
 
-.rate-limit-tag {
+.offline-banner {
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.stale-banner {
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+.error-banner {
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.banner-text {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.offline-tag,
+.stale-tag,
+.rate-limit-tag,
+.error-tag {
   font-family: var(--font-mono);
   font-size: 10px;
-  font-weight: 500;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   padding: 2px 8px;
   border-radius: 4px;
-  background-color: var(--bg-subtle);
-  border: 1px solid var(--border-subtle);
-  color: var(--text-muted);
   white-space: nowrap;
 }
 
-.rate-limit-text {
-  color: var(--text-secondary);
-  font-size: 12px;
+.offline-tag {
+  background-color: var(--status-unreachable-bg);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: var(--status-unreachable-text);
+}
+
+.stale-tag {
+  background-color: var(--status-degraded-bg);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: var(--status-degraded-text);
+}
+
+.rate-limit-tag {
+  background-color: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+}
+
+.error-tag {
+  background-color: var(--status-unreachable-bg);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: var(--status-unreachable-text);
 }
 
 /* 404 Not Found Page */
