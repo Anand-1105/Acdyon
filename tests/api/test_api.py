@@ -266,3 +266,86 @@ class TestDependencyInjectionLifecycle:
             registry=reg2,
         )
         assert svc1._registry.get("weworkremotely") is svc2._registry.get("weworkremotely")
+
+
+class TestRunsAndLogsEndpoints:
+    @pytest.mark.asyncio
+    async def test_list_runs_empty(self, client):
+        res = client.get("/api/v1/runs")
+        assert res.status_code == 200
+        assert res.json() == []
+
+        res_logs = client.get("/api/v1/logs")
+        assert res_logs.status_code == 200
+        assert res_logs.json() == []
+
+    @pytest.mark.asyncio
+    async def test_list_runs_ordered_chronologically(self, client, storage):
+        t1 = datetime(2026, 8, 19, 10, 0, 0, tzinfo=timezone.utc)
+        t2 = datetime(2026, 8, 19, 11, 0, 0, tzinfo=timezone.utc)
+
+        src_info = SourceInfo(
+            source_name="weworkremotely",
+            source_type=SourceType.RSS,
+            endpoint="https://weworkremotely.com/remote-jobs.rss",
+            retrieval_timestamp=t1,
+        )
+
+        stats1 = IngestionStats(
+            source_name="weworkremotely",
+            started_at=t1,
+            completed_at=t1,
+            duration_ms=1500,
+            status=IngestionRunStatus.SUCCESS,
+            records_received=50,
+            records_accepted=50,
+        )
+        stats2 = IngestionStats(
+            source_name="weworkremotely",
+            started_at=t2,
+            completed_at=t2,
+            duration_ms=2100,
+            status=IngestionRunStatus.PARTIAL_SUCCESS,
+            records_received=100,
+            records_accepted=95,
+            records_rejected=5,
+        )
+
+        await storage.runs.save_ingestion_run(stats1, src_info, [], run_id="run_10am")
+        await storage.runs.save_ingestion_run(stats2, src_info, [], run_id="run_11am")
+
+        res = client.get("/api/v1/logs")
+        assert res.status_code == 200
+        data = res.json()
+        assert len(data) == 2
+        assert data[0]["run_id"] == "run_11am"  # Newest first
+        assert data[1]["run_id"] == "run_10am"
+
+    @pytest.mark.asyncio
+    async def test_list_runs_pagination_and_source_filter(self, client, storage):
+        t0 = datetime(2026, 8, 19, 12, 0, 0, tzinfo=timezone.utc)
+        src_wwr = SourceInfo(source_name="weworkremotely", source_type=SourceType.RSS, endpoint="https://wwr.com/feed", retrieval_timestamp=t0)
+        src_other = SourceInfo(source_name="remoteok", source_type=SourceType.RSS, endpoint="https://remoteok.com/feed", retrieval_timestamp=t0)
+
+        for i in range(5):
+            t_i = datetime(2026, 8, 19, 12, i, 0, tzinfo=timezone.utc)
+            st = IngestionStats(source_name="weworkremotely", started_at=t_i, completed_at=t_i, duration_ms=100, status=IngestionRunStatus.SUCCESS)
+            await storage.runs.save_ingestion_run(st, src_wwr, [], run_id=f"wwr_{i}")
+
+        st_other = IngestionStats(source_name="remoteok", started_at=t0, completed_at=t0, duration_ms=100, status=IngestionRunStatus.SUCCESS)
+        await storage.runs.save_ingestion_run(st_other, src_other, [], run_id="other_0")
+
+        # Source filter
+        res_wwr = client.get("/api/v1/logs?source_name=weworkremotely")
+        assert res_wwr.status_code == 200
+        assert len(res_wwr.json()) == 5
+
+        res_other = client.get("/api/v1/logs?source_name=remoteok")
+        assert res_other.status_code == 200
+        assert len(res_other.json()) == 1
+
+        # Pagination limit and offset
+        res_page = client.get("/api/v1/logs?source_name=weworkremotely&limit=2&offset=0")
+        assert res_page.status_code == 200
+        assert len(res_page.json()) == 2
+

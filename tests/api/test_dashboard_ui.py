@@ -149,3 +149,57 @@ class TestRoutingAndErrorHardening:
         data = response.json()
         assert "detail" in data
         assert "run_nonexistent_999999" in data["detail"]
+
+
+class TestLogsViewAndSidebarNavigation:
+    def test_html_contains_sidebar_and_two_views(self, client):
+        response = client.get("/")
+        assert response.status_code == 200
+        html = response.text
+
+        # Verify Sidebar with exactly Dashboard and Logs
+        assert "app-sidebar" in html
+        assert "nav-btn-dashboard" in html
+        assert "nav-btn-logs" in html
+        assert "Dashboard" in html
+        assert "Logs" in html
+
+        # Verify Two Distinct Views
+        assert 'id="view-dashboard"' in html
+        assert 'id="view-logs"' in html
+
+        # Verify Logs Components
+        assert 'id="logs-timeline-bar"' in html
+        assert 'id="logs-tbody"' in html
+        assert 'id="log-drawer-backdrop"' in html
+        assert "Ingestion history and operational events" in html
+
+    def test_app_js_contains_logs_view_handlers(self, client):
+        response = client.get("/app.js")
+        assert response.status_code == 200
+        js = response.text
+
+        assert "switchView" in js
+        assert "loadLogs" in js
+        assert "renderTimeline" in js
+        assert "renderLogsTable" in js
+        assert "openLogDetail" in js
+        assert "closeLogDrawer" in js
+        assert "/api/v1/logs" in js
+
+    def test_styles_css_contains_sidebar_and_timeline_rules(self, client):
+        response = client.get("/styles.css")
+        assert response.status_code == 200
+        css = response.text
+
+        assert ".app-layout" in css
+        assert ".app-sidebar" in css
+        assert ".nav-item" in css
+        assert ".logs-timeline-panel" in css
+        assert ".timeline-bar-container" in css
+        assert ".timeline-seg" in css
+        assert ".seg-success" in css
+        assert ".seg-partial" in css
+        assert ".seg-failed" in css
+        assert ".seg-empty" in css
+

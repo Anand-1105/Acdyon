@@ -1,17 +1,38 @@
 """Ingestion Runs Telemetry Endpoint Router.
 
-Exposes GET /api/v1/runs/{run_id} and GET /api/v1/runs/latest/{source_name}.
+Exposes:
+- GET /api/v1/runs (list historical runs)
+- GET /api/v1/runs/{run_id} (get specific run)
+- GET /api/v1/runs/latest/{source_name} (get latest run for source)
 """
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import List, Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from src.api.deps import get_run_repository
 from src.api.models import IngestionRunResponseModel
 from src.storage.base import BaseIngestionRunRepository
 
 router = APIRouter(prefix="/api/v1/runs", tags=["Telemetry"])
+
+
+@router.get("", response_model=List[IngestionRunResponseModel])
+async def list_runs(
+    source_name: Optional[str] = Query(None, description="Filter by source name"),
+    limit: int = Query(50, ge=1, le=100, description="Max historical runs to return"),
+    offset: int = Query(0, ge=0, description="Pagination offset"),
+    repo: BaseIngestionRunRepository = Depends(get_run_repository),
+) -> List[IngestionRunResponseModel]:
+    """Retrieve chronologically ordered historical ingestion runs (newest first)."""
+    runs = await repo.list_runs(
+        source_name=source_name.strip().lower() if source_name else None,
+        limit=limit,
+        offset=offset,
+    )
+    return [IngestionRunResponseModel(**r) for r in runs]
 
 
 @router.get("/{run_id}", response_model=IngestionRunResponseModel)

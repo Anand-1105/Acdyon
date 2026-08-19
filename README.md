@@ -218,7 +218,7 @@ uvicorn src.api.app:app --host 0.0.0.0 --port $PORT --workers 1
 
 ### 6. Running Automated Tests
 
-Run the complete test suite (**305 tests**):
+Run the complete test suite (**313 tests**):
 
 ```bash
 pytest tests/ -v
@@ -226,10 +226,16 @@ pytest tests/ -v
 
 ---
 
-## Operational Demo & Interface Guide
+## Operational Interface Guide: Dashboard vs. Logs
 
-1. **Open Dashboard UI**: Navigate to [`https://acdyon-backend-72ph.onrender.com/`](https://acdyon-backend-72ph.onrender.com/) in a web browser.
-2. **Check System Liveness**: Inspect the `API: Online` indicator in the header (backed by `GET /health`).
-3. **Inspect Source Health**: Review the **We Work Remotely · RSS** panel showing provider health (`HEALTHY`), last ingestion timestamp, and total job count.
-4. **Trigger Ingestion**: Click **Ingest latest jobs**. This issues a `POST /api/v1/ingest` call to retrieve, validate, deduplicate, and persist jobs to Supabase PostgreSQL.
-5. **Inspect Telemetry & Jobs**: View real-time run telemetry (Duration, Accepted, Rejected, Duplicates) and browse canonical job listings. Click **Details** on any row to open the metadata drawer.
+The web interface separates daily ingestion workflows from historical operational debugging:
+
+### 1. Primary Dashboard (`/`)
+* **Focus**: Current ingestion workflow, provider health, freshness, manual trigger actions (`Ingest latest jobs`), latest run telemetry, and canonical job discovery with sanitized job detail drawers.
+* **Question Answered**: *"What is the current health of We Work Remotely, and what jobs are currently available?"*
+
+### 2. Operational Logs (`/logs` view)
+* **Focus**: Chronological ingestion event history and system activity visualization backed directly by persisted database records from the `ingestion_runs` repository (`GET /api/v1/logs`).
+* **24-Hour Activity Timeline**: Represents real historical ingestion executions (Green = Success, Yellow = Partial/Degraded, Red = Failed, Gray = No recorded event).
+* **Question Answered**: *"What happened previously, what was the duration/throughput of past runs, and what failed if an error occurred?"*
+* *Note: The activity timeline visualizes discrete persisted ingestion run events, not synthetic or continuous uptime polling.*

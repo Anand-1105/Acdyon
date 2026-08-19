@@ -8,165 +8,256 @@
   <script src="/config.js"></script>
 </head>
 <body>
-  <div class="app-container">
-    <!-- Header / Navigation -->
-    <header class="app-header">
-      <div class="brand">
-        <span class="brand-name">Acdyon</span>
-        <span class="brand-divider">/</span>
-        <span class="brand-module">Job Ingestion Subsystem</span>
-      </div>
-      <div class="header-status">
-        <span class="status-indicator" id="api-status-dot"></span>
-        <span class="status-text" id="api-status-text">Connecting...</span>
-      </div>
-    </header>
-
-    <main class="app-main">
-      <!-- Operational Control & Source Health Panel -->
-      <section class="control-panel">
-        <div class="source-info">
-          <div class="source-title-row">
-            <h1 class="source-title">We Work Remotely</h1>
-            <span class="source-type">RSS</span>
-            <a href="https://weworkremotely.com/remote-jobs.rss" target="_blank" rel="noopener noreferrer" class="feed-link">
-              View Feed ↗
-            </a>
-          </div>
-          <div class="source-meta">
-            <span class="meta-item">
-              Health: <strong id="health-status-value" class="status-healthy">HEALTHY</strong>
-            </span>
-            <span class="meta-divider">•</span>
-            <span class="meta-item">
-              Last Ingestion: <span id="health-last-success">—</span>
-            </span>
-            <span class="meta-divider">•</span>
-            <span class="meta-item">
-              Total Ingested Jobs: <span id="health-total-jobs">0</span>
-            </span>
-          </div>
+  <div class="app-layout">
+    <!-- Left Sidebar Navigation -->
+    <aside class="app-sidebar" aria-label="Main Navigation">
+      <div class="sidebar-top">
+        <div class="sidebar-brand">
+          <span class="brand-name">Acdyon</span>
+          <span class="brand-sub">Ingestion</span>
         </div>
-        <div class="source-actions">
-          <button id="btn-ingest" class="btn btn-primary" onclick="triggerIngestion()">
-            Ingest latest jobs
+
+        <nav class="sidebar-nav">
+          <button class="nav-item active" id="nav-btn-dashboard" onclick="switchView('dashboard')">
+            <span class="nav-icon">⊞</span>
+            <span class="nav-label">Dashboard</span>
           </button>
-        </div>
-      </section>
+          <button class="nav-item" id="nav-btn-logs" onclick="switchView('logs')">
+            <span class="nav-icon">≡</span>
+            <span class="nav-label">Logs</span>
+          </button>
+        </nav>
+      </div>
 
-      <!-- Latest Run Telemetry -->
-      <section class="telemetry-panel" id="telemetry-panel">
-        <div class="telemetry-header">
-          <span class="panel-label">Latest Run Telemetry</span>
-          <span class="run-id-tag" id="telemetry-run-id">run_—</span>
+      <div class="sidebar-footer">
+        <div class="header-status">
+          <span class="status-indicator" id="api-status-dot"></span>
+          <span class="status-text" id="api-status-text">Connecting...</span>
         </div>
-        <div class="telemetry-grid">
-          <div class="telemetry-item">
-            <span class="telemetry-label">Status</span>
-            <span class="telemetry-value" id="telemetry-status">—</span>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="app-content-wrapper">
+      <!-- 1. PRIMARY DASHBOARD VIEW -->
+      <main class="app-main content-view" id="view-dashboard">
+        <!-- Operational Control & Source Health Panel -->
+        <section class="control-panel">
+          <div class="source-info">
+            <div class="source-title-row">
+              <h1 class="source-title">We Work Remotely</h1>
+              <span class="source-type">RSS</span>
+              <a href="https://weworkremotely.com/remote-jobs.rss" target="_blank" rel="noopener noreferrer" class="feed-link">
+                View Feed ↗
+              </a>
+            </div>
+            <div class="source-meta">
+              <span class="meta-item">
+                Health: <strong id="health-status-value" class="status-healthy">HEALTHY</strong>
+              </span>
+              <span class="meta-divider">•</span>
+              <span class="meta-item">
+                Last Ingestion: <span id="health-last-success">—</span>
+              </span>
+              <span class="meta-divider">•</span>
+              <span class="meta-item">
+                Total Ingested Jobs: <span id="health-total-jobs">0</span>
+              </span>
+            </div>
           </div>
-          <div class="telemetry-item">
-            <span class="telemetry-label">Duration</span>
-            <span class="telemetry-value" id="telemetry-duration">—</span>
+          <div class="source-actions">
+            <button id="btn-ingest" class="btn btn-primary" onclick="triggerIngestion()">
+              Ingest latest jobs
+            </button>
           </div>
-          <div class="telemetry-item">
-            <span class="telemetry-label">Records Received</span>
-            <span class="telemetry-value" id="telemetry-received">0</span>
+        </section>
+
+        <!-- Latest Run Telemetry -->
+        <section class="telemetry-panel" id="telemetry-panel">
+          <div class="telemetry-header">
+            <span class="panel-label">Latest Run Telemetry</span>
+            <span class="run-id-tag" id="telemetry-run-id">run_—</span>
           </div>
-          <div class="telemetry-item">
-            <span class="telemetry-label">Records Accepted</span>
-            <span class="telemetry-value" id="telemetry-accepted">0</span>
+          <div class="telemetry-grid">
+            <div class="telemetry-item">
+              <span class="telemetry-label">Status</span>
+              <span class="telemetry-value" id="telemetry-status">—</span>
+            </div>
+            <div class="telemetry-item">
+              <span class="telemetry-label">Duration</span>
+              <span class="telemetry-value" id="telemetry-duration">—</span>
+            </div>
+            <div class="telemetry-item">
+              <span class="telemetry-label">Records Received</span>
+              <span class="telemetry-value" id="telemetry-received">0</span>
+            </div>
+            <div class="telemetry-item">
+              <span class="telemetry-label">Records Accepted</span>
+              <span class="telemetry-value" id="telemetry-accepted">0</span>
+            </div>
+            <div class="telemetry-item">
+              <span class="telemetry-label">Records Rejected</span>
+              <span class="telemetry-value" id="telemetry-rejected">0</span>
+            </div>
+            <div class="telemetry-item">
+              <span class="telemetry-label">Duplicates</span>
+              <span class="telemetry-value" id="telemetry-duplicates">0</span>
+            </div>
           </div>
-          <div class="telemetry-item">
-            <span class="telemetry-label">Records Rejected</span>
-            <span class="telemetry-value" id="telemetry-rejected">0</span>
+        </section>
+
+        <!-- Backend Unavailable Banner (Conditional) -->
+        <section class="offline-banner hidden" id="offline-banner">
+          <span class="offline-tag">OFFLINE</span>
+          <span id="offline-message" class="banner-text">Backend service is currently unavailable. Live job data cannot be loaded and ingestion cannot be triggered.</span>
+        </section>
+
+        <!-- Stale Data Banner (Conditional) -->
+        <section class="stale-banner hidden" id="stale-banner">
+          <span class="stale-tag">STALE DATA</span>
+          <span id="stale-message" class="banner-text">Data may be stale · Failed to refresh latest postings</span>
+        </section>
+
+        <!-- Rate Limit & Frequency Advisory Banner (Conditional) -->
+        <section class="rate-limit-banner hidden" id="rate-limit-banner">
+          <span class="rate-limit-tag">CADENCE ADVISORY</span>
+          <span id="rate-limit-message" class="banner-text">We advise checking back every 15–30 minutes for new job postings, as We Work Remotely typically updates their feed periodically.</span>
+        </section>
+
+        <!-- Ingestion Notice Banner (Conditional) -->
+        <section class="error-banner hidden" id="error-banner">
+          <span class="error-tag">NOTICE</span>
+          <span class="banner-text" id="error-message"></span>
+        </section>
+
+        <!-- Canonical Jobs Listing -->
+        <section class="jobs-panel">
+          <div class="jobs-panel-header">
+            <h2 class="panel-heading">Canonical Job Postings</h2>
+            <span class="jobs-count-tag" id="jobs-count-tag">Showing 0 jobs</span>
           </div>
-          <div class="telemetry-item">
-            <span class="telemetry-label">Duplicates</span>
-            <span class="telemetry-value" id="telemetry-duplicates">0</span>
+
+          <div class="table-container">
+            <table class="jobs-table">
+              <thead>
+                <tr>
+                  <th>Job Title</th>
+                  <th>Company</th>
+                  <th>Location</th>
+                  <th>Published</th>
+                  <th>Source</th>
+                  <th class="text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody id="jobs-tbody">
+                <tr class="empty-row">
+                  <td colspan="6" class="text-muted text-center">Loading jobs...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination Controls -->
+          <div class="pagination-bar">
+            <button id="btn-prev" class="btn btn-secondary" onclick="prevPage()" disabled>← Previous</button>
+            <span class="pagination-info" id="pagination-info">Page 1</span>
+            <button id="btn-next" class="btn btn-secondary" onclick="nextPage()" disabled>Next →</button>
+          </div>
+        </section>
+      </main>
+
+      <!-- 2. SEPARATE LOGS VIEW -->
+      <main class="app-main content-view hidden" id="view-logs">
+        <div class="logs-header-row">
+          <div>
+            <h1 class="view-title">Logs</h1>
+            <p class="view-subtitle">Ingestion history and operational events</p>
+          </div>
+          <div>
+            <button class="btn btn-secondary" onclick="loadLogs(true)">Refresh History</button>
           </div>
         </div>
-      </section>
 
-      <!-- Backend Unavailable Banner (Conditional) -->
-      <section class="offline-banner hidden" id="offline-banner">
-        <span class="offline-tag">OFFLINE</span>
-        <span id="offline-message" class="banner-text">Backend service is currently unavailable. Live job data cannot be loaded and ingestion cannot be triggered.</span>
-      </section>
+        <!-- Status History Timeline -->
+        <section class="logs-timeline-panel">
+          <div class="timeline-header">
+            <span class="panel-label">System Activity · Last 24 Hours</span>
+            <div class="timeline-legend">
+              <span class="legend-item"><span class="legend-dot dot-success"></span> Success</span>
+              <span class="legend-item"><span class="legend-dot dot-partial"></span> Degraded</span>
+              <span class="legend-item"><span class="legend-dot dot-failed"></span> Failed</span>
+              <span class="legend-item"><span class="legend-dot dot-empty"></span> No Event</span>
+            </div>
+          </div>
+          <div class="timeline-bar-container" id="logs-timeline-bar" aria-label="System Activity Timeline">
+            <!-- 24 hourly buckets populated by JS -->
+          </div>
+        </section>
 
-      <!-- Stale Data Banner (Conditional) -->
-      <section class="stale-banner hidden" id="stale-banner">
-        <span class="stale-tag">STALE DATA</span>
-        <span id="stale-message" class="banner-text">Data may be stale · Failed to refresh latest postings</span>
-      </section>
+        <!-- Log Event List Table -->
+        <section class="jobs-panel">
+          <div class="jobs-panel-header">
+            <h2 class="panel-heading">Ingestion History</h2>
+            <span class="jobs-count-tag" id="logs-count-tag">Showing 0 events</span>
+          </div>
 
-      <!-- Rate Limit & Frequency Advisory Banner (Conditional) -->
-      <section class="rate-limit-banner hidden" id="rate-limit-banner">
-        <span class="rate-limit-tag">CADENCE ADVISORY</span>
-        <span id="rate-limit-message" class="banner-text">We advise checking back every 15–30 minutes for new job postings, as We Work Remotely typically updates their feed periodically.</span>
-      </section>
+          <div class="table-container">
+            <table class="jobs-table">
+              <thead>
+                <tr>
+                  <th>Timestamp (UTC)</th>
+                  <th>Source</th>
+                  <th>Status</th>
+                  <th>Duration</th>
+                  <th>Accepted / Total</th>
+                  <th>Duplicates</th>
+                  <th>Retries</th>
+                  <th class="text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody id="logs-tbody">
+                <tr class="empty-row">
+                  <td colspan="8" class="text-muted text-center">Loading ingestion history...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </main>
 
-      <!-- Ingestion Notice Banner (Conditional) -->
-      <section class="error-banner hidden" id="error-banner">
-        <span class="error-tag">NOTICE</span>
-        <span class="banner-text" id="error-message"></span>
-      </section>
+      <!-- Footer -->
+      <footer class="app-footer">
+        <span>Acdyon Canonical Job Ingestion Architecture</span>
+        <span class="footer-divider">•</span>
+        <span>Public Feed Compliance: We Work Remotely RSS</span>
+      </footer>
+    </div>
+  </div>
 
-      <!-- Canonical Jobs Listing -->
-      <section class="jobs-panel">
-        <div class="jobs-panel-header">
-          <h2 class="panel-heading">Canonical Job Postings</h2>
-          <span class="jobs-count-tag" id="jobs-count-tag">Showing 0 jobs</span>
-        </div>
-
-        <div class="table-container">
-          <table class="jobs-table">
-            <thead>
-              <tr>
-                <th>Job Title</th>
-                <th>Company</th>
-                <th>Location</th>
-                <th>Published</th>
-                <th>Source</th>
-                <th class="text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody id="jobs-tbody">
-              <tr class="empty-row">
-                <td colspan="6" class="text-muted text-center">Loading jobs...</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Pagination Controls -->
-        <div class="pagination-bar">
-          <button id="btn-prev" class="btn btn-secondary" onclick="prevPage()" disabled>← Previous</button>
-          <span class="pagination-info" id="pagination-info">Page 1</span>
-          <button id="btn-next" class="btn btn-secondary" onclick="nextPage()" disabled>Next →</button>
-        </div>
-      </section>
-    </main>
-
-    <!-- Detail Drawer Modal -->
-    <div class="drawer-backdrop hidden" id="drawer-backdrop" onclick="closeDrawer()">
-      <div class="drawer-panel" onclick="event.stopPropagation()">
-        <div class="drawer-header">
-          <h3 class="drawer-title" id="drawer-job-title">Job Details</h3>
-          <button class="btn-close" onclick="closeDrawer()">✕</button>
-        </div>
-        <div class="drawer-body" id="drawer-body">
-          <!-- Populated by JS -->
-        </div>
+  <!-- Job Detail Drawer Modal -->
+  <div class="drawer-backdrop hidden" id="drawer-backdrop" onclick="closeDrawer()">
+    <div class="drawer-panel" onclick="event.stopPropagation()">
+      <div class="drawer-header">
+        <h3 class="drawer-title" id="drawer-job-title">Job Details</h3>
+        <button class="btn-close" onclick="closeDrawer()">✕</button>
+      </div>
+      <div class="drawer-body" id="drawer-body">
+        <!-- Populated by JS -->
       </div>
     </div>
+  </div>
 
-    <!-- Footer -->
-    <footer class="app-footer">
-      <span>Acdyon Canonical Job Ingestion Architecture</span>
-      <span class="footer-divider">•</span>
-      <span>Public Feed Compliance: We Work Remotely RSS</span>
-    </footer>
+  <!-- Log Event Detail Drawer Modal -->
+  <div class="drawer-backdrop hidden" id="log-drawer-backdrop" onclick="closeLogDrawer()">
+    <div class="drawer-panel" onclick="event.stopPropagation()">
+      <div class="drawer-header">
+        <h3 class="drawer-title" id="log-drawer-title">Ingestion Run Details</h3>
+        <button class="btn-close" onclick="closeLogDrawer()">✕</button>
+      </div>
+      <div class="drawer-body" id="log-drawer-body">
+        <!-- Populated by JS -->
+      </div>
+    </div>
   </div>
 
   <script src="/app.js"></script>

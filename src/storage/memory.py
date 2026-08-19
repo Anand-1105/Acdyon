@@ -118,6 +118,19 @@ class InMemoryIngestionRunRepository(BaseIngestionRunRepository):
             matching.sort(key=lambda r: r["created_at"], reverse=True)
             return matching[0]
 
+    async def list_runs(
+        self,
+        source_name: Optional[str] = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> List[dict[str, Any]]:
+        async with self._lock:
+            runs = list(self._runs.values())
+            if source_name:
+                runs = [r for r in runs if r["source_name"] == source_name.lower()]
+            runs.sort(key=lambda r: r.get("started_at") or r["created_at"], reverse=True)
+            return runs[offset : offset + limit]
+
     async def clear(self) -> None:
         async with self._lock:
             self._runs.clear()

@@ -121,6 +121,16 @@ class BaseIngestionRunRepository(ABC):
         """Retrieve telemetry for the most recent run of a given source."""
         ...
 
+    @abstractmethod
+    async def list_runs(
+        self,
+        source_name: Optional[str] = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> List[dict[str, Any]]:
+        """List historical ingestion runs ordered chronologically (newest first)."""
+        ...
+
 
 class BaseSourceHealthRepository(ABC):
     """Abstract interface for persisting and reading source health states."""

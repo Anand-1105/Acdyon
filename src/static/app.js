@@ -603,6 +603,301 @@ function closeDrawer() {
   document.getElementById("drawer-backdrop").classList.add("hidden");
 }
 
+function switchView(viewName) {
+  const dashBtn = document.getElementById("nav-btn-dashboard");
+  const logsBtn = document.getElementById("nav-btn-logs");
+  const dashView = document.getElementById("view-dashboard");
+  const logsView = document.getElementById("view-logs");
+
+  if (viewName === "logs") {
+    dashBtn.classList.remove("active");
+    dashBtn.removeAttribute("aria-current");
+    logsBtn.classList.add("active");
+    logsBtn.setAttribute("aria-current", "page");
+
+    dashView.classList.add("hidden");
+    logsView.classList.remove("hidden");
+    loadLogs();
+  } else {
+    logsBtn.classList.remove("active");
+    logsBtn.removeAttribute("aria-current");
+    dashBtn.classList.add("active");
+    dashBtn.setAttribute("aria-current", "page");
+
+    logsView.classList.add("hidden");
+    dashView.classList.remove("hidden");
+  }
+}
+
+let cachedRuns = [];
+
+async function loadLogs(forceRefresh = false) {
+  const tbody = document.getElementById("logs-tbody");
+  const countTag = document.getElementById("logs-count-tag");
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/v1/logs?limit=50`);
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}: Failed to fetch ingestion logs`);
+    }
+
+    const runs = await res.json();
+    cachedRuns = runs;
+    renderTimeline(runs);
+    renderLogsTable(runs);
+
+    if (countTag) {
+      countTag.textContent = `Showing ${runs.length} event${runs.length === 1 ? '' : 's'}`;
+    }
+  } catch (err) {
+    console.error("Failed to load logs:", err);
+    if (tbody) {
+      tbody.innerHTML = `
+        <tr class="empty-row">
+          <td colspan="8" class="text-muted text-center text-unreachable" style="padding: 24px;">
+            Unable to retrieve ingestion history: ${escapeHtml(err.message)}
+          </td>
+        </tr>
+      `;
+    }
+  }
+}
+
+function renderTimeline(runs) {
+  const container = document.getElementById("logs-timeline-bar");
+  if (!container) return;
+
+  const now = Date.now();
+  const oneHourMs = 3600 * 1000;
+  const numBuckets = 24;
+  let html = "";
+
+  for (let i = numBuckets - 1; i >= 0; i--) {
+    const bucketStart = now - (i + 1) * oneHourMs;
+    const bucketEnd = now - i * oneHourMs;
+    const startTimeStr = new Date(bucketStart).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+
+    const runsInBucket = runs.filter(r => {
+      const runTime = new Date(r.started_at || r.created_at).getTime();
+      return runTime >= bucketStart && runTime < bucketEnd;
+    });
+
+    if (runsInBucket.length === 0) {
+      html += `
+        <div class="timeline-seg seg-empty" title="${startTimeStr} UTC: No recorded events" tabindex="0" role="img" aria-label="${startTimeStr} UTC: No recorded events"></div>
+      `;
+    } else {
+      const hasFailed = runsInBucket.some(r => r.status === "failed");
+      const hasPartial = runsInBucket.some(r => r.status === "partial_success");
+      
+      let segClass = "seg-success";
+      let statusLabel = "SUCCESS";
+
+      if (hasFailed) {
+        segClass = "seg-failed";
+        statusLabel = "FAILED";
+      } else if (hasPartial) {
+        segClass = "seg-partial";
+        statusLabel = "DEGRADED / PARTIAL";
+      }
+
+      const totalAccepted = runsInBucket.reduce((acc, r) => acc + (r.records_accepted || 0), 0);
+      const latestRunId = runsInBucket[0].run_id;
+
+      html += `
+        <div class="timeline-seg ${segClass}" 
+             title="${startTimeStr} UTC: ${statusLabel} (${runsInBucket.length} run${runsInBucket.length > 1 ? 's' : ''}, ${totalAccepted} accepted)" 
+             onclick="openLogDetail('${escapeHtml(latestRunId)}')"
+             tabindex="0"
+             role="button"
+             aria-label="${startTimeStr} UTC: ${statusLabel}"></div>
+      `;
+    }
+  }
+
+  container.innerHTML = html;
+}
+
+function renderLogsTable(runs) {
+  const tbody = document.getElementById("logs-tbody");
+  if (!tbody) return;
+
+  if (runs.length === 0) {
+    tbody.innerHTML = `
+      <tr class="empty-row">
+        <td colspan="8" class="text-muted text-center" style="padding: 24px;">
+          No ingestion history recorded yet.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  let html = "";
+  runs.forEach(run => {
+    const timeStr = run.started_at ? new Date(run.started_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'medium' }) : "N/A";
+    const durationStr = run.duration_ms ? `${(run.duration_ms / 1000).toFixed(1)}s` : "0s";
+    
+    let statusBadgeClass = "status-healthy";
+    let statusText = "SUCCESS";
+    if (run.status === "failed") {
+      statusBadgeClass = "status-unreachable";
+      statusText = "FAILED";
+    } else if (run.status === "partial_success") {
+      statusBadgeClass = "status-degraded";
+      statusText = "PARTIAL";
+    }
+
+    const acceptedRatio = `${run.records_accepted || 0} / ${run.records_received || 0}`;
+
+    html += `
+      <tr>
+        <td class="mono-cell">${escapeHtml(timeStr)}</td>
+        <td>${escapeHtml(formatSourceName(run.source_name))}</td>
+        <td><strong class="${statusBadgeClass}">${statusText}</strong></td>
+        <td class="mono-cell">${escapeHtml(durationStr)}</td>
+        <td class="mono-cell">${escapeHtml(acceptedRatio)}</td>
+        <td class="mono-cell">${run.duplicates_detected || 0}</td>
+        <td class="mono-cell">${run.retries || 0}</td>
+        <td class="text-right">
+          <button class="btn-link" onclick="openLogDetail('${escapeHtml(run.run_id)}')">Details</button>
+        </td>
+      </tr>
+    `;
+  });
+
+  tbody.innerHTML = html;
+}
+
+function openLogDetail(runId) {
+  const run = cachedRuns.find(r => r.run_id === runId);
+  const backdrop = document.getElementById("log-drawer-backdrop");
+  const titleEl = document.getElementById("log-drawer-title");
+  const body = document.getElementById("log-drawer-body");
+
+  if (!run) {
+    titleEl.textContent = "Run Details Not Found";
+    body.innerHTML = `
+      <div class="drawer-empty-state">
+        <p class="drawer-empty-title">Ingestion run not found</p>
+        <p class="drawer-empty-desc">
+          The requested run record (<span class="mono-cell">${escapeHtml(runId)}</span>) is not present in local cache.
+        </p>
+        <div style="margin-top: 16px;">
+          <button class="btn btn-secondary" onclick="closeLogDrawer()">Return to Logs</button>
+        </div>
+      </div>
+    `;
+    backdrop.classList.remove("hidden");
+    return;
+  }
+
+  titleEl.textContent = `Run ${run.run_id}`;
+  const startTime = run.started_at ? new Date(run.started_at).toLocaleString() : "N/A";
+  const completedTime = run.completed_at ? new Date(run.completed_at).toLocaleString() : "N/A";
+  const durationSec = run.duration_ms ? `${(run.duration_ms / 1000).toFixed(2)}s (${run.duration_ms} ms)` : "0 ms";
+
+  let statusClass = "status-healthy";
+  if (run.status === "failed") statusClass = "status-unreachable";
+  else if (run.status === "partial_success") statusClass = "status-degraded";
+
+  let errorsHtml = "";
+  if (run.errors && run.errors.length > 0) {
+    const errorItems = run.errors.map(err => `
+      <div class="meta-kv-row" style="flex-direction: column; align-items: flex-start; gap: 4px; padding: 8px 0; border-bottom: 1px solid var(--border-subtle);">
+        <div style="color: var(--status-unreachable-text); font-weight: 600; font-size: 11px;">${escapeHtml(err.error_type || "INGESTION_ERROR")}</div>
+        <div style="color: var(--text-secondary); font-size: 12px;">${escapeHtml(err.message || "Unknown error")}</div>
+        <div style="color: var(--text-muted); font-size: 11px;">Last-known-good state: <strong>Preserved</strong></div>
+      </div>
+    `).join("");
+
+    errorsHtml = `
+      <div class="drawer-field" style="margin-top: 16px;">
+        <div class="drawer-field-label" style="color: var(--status-unreachable-text);">Error Diagnostics</div>
+        <div class="meta-kv-grid" style="background-color: var(--status-unreachable-bg); border-color: rgba(239, 68, 68, 0.3);">
+          ${errorItems}
+        </div>
+      </div>
+    `;
+  }
+
+  body.innerHTML = `
+    <!-- Top Run Summary -->
+    <div class="drawer-overview-grid">
+      <div class="drawer-field">
+        <div class="drawer-field-label">Status</div>
+        <div class="drawer-field-value"><strong class="${statusClass}">${escapeHtml(run.status.toUpperCase())}</strong></div>
+      </div>
+      <div class="drawer-field">
+        <div class="drawer-field-label">Source Provider</div>
+        <div class="drawer-field-value drawer-field-highlight">${escapeHtml(formatSourceName(run.source_name))}</div>
+      </div>
+      <div class="drawer-field">
+        <div class="drawer-field-label">Started At</div>
+        <div class="drawer-field-value mono-cell">${startTime}</div>
+      </div>
+      <div class="drawer-field">
+        <div class="drawer-field-label">Duration</div>
+        <div class="drawer-field-value mono-cell">${durationSec}</div>
+      </div>
+    </div>
+
+    <!-- Execution Metrics Grid -->
+    <div class="drawer-field">
+      <div class="drawer-field-label">Execution Telemetry</div>
+      <div class="meta-kv-grid">
+        <div class="meta-kv-row">
+          <div class="meta-kv-key">Records Received</div>
+          <div class="meta-kv-val">${run.records_received || 0}</div>
+        </div>
+        <div class="meta-kv-row">
+          <div class="meta-kv-key">Records Accepted</div>
+          <div class="meta-kv-val">${run.records_accepted || 0}</div>
+        </div>
+        <div class="meta-kv-row">
+          <div class="meta-kv-key">Records Rejected</div>
+          <div class="meta-kv-val">${run.records_rejected || 0}</div>
+        </div>
+        <div class="meta-kv-row">
+          <div class="meta-kv-key">Duplicates Detected</div>
+          <div class="meta-kv-val">${run.duplicates_detected || 0}</div>
+        </div>
+        <div class="meta-kv-row">
+          <div class="meta-kv-key">Retries Attempted</div>
+          <div class="meta-kv-val">${run.retries || 0}</div>
+        </div>
+        <div class="meta-kv-row">
+          <div class="meta-kv-key">Failed Network Requests</div>
+          <div class="meta-kv-val">${run.failed_requests || 0}</div>
+        </div>
+      </div>
+    </div>
+
+    ${errorsHtml}
+
+    <!-- Technical Source Metadata -->
+    <details class="source-data-details" style="margin-top: 20px;">
+      <summary class="source-data-summary">Source Info & Endpoint Metadata</summary>
+      <div class="source-data-content">
+        <div class="drawer-field">
+          <div class="drawer-field-label">Endpoint URL</div>
+          <div class="drawer-field-value mono-cell">${escapeHtml(run.source_info ? run.source_info.endpoint : "https://weworkremotely.com/remote-jobs.rss")}</div>
+        </div>
+        <div class="drawer-field">
+          <div class="drawer-field-label">Attribution</div>
+          <div class="drawer-field-value">${escapeHtml(run.source_info ? run.source_info.attribution : "Job listings provided by We Work Remotely")}</div>
+        </div>
+      </div>
+    </details>
+  `;
+
+  backdrop.classList.remove("hidden");
+}
+
+function closeLogDrawer() {
+  document.getElementById("log-drawer-backdrop").classList.add("hidden");
+}
+
 function escapeHtml(str) {
   if (!str) return "";
   return String(str)

@@ -170,6 +170,31 @@ class PostgresIngestionRunRepository(BaseIngestionRunRepository):
             error_from_storage_exception(exc, operation="get_latest_run", details={"source_name": source_name})
             return None
 
+    async def list_runs(
+        self,
+        source_name: Optional[str] = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> List[dict[str, Any]]:
+        try:
+            def _do_list():
+                query = (
+                    self._client.table("ingestion_runs")
+                    .select("*")
+                    .order("started_at", desc=True)
+                    .limit(limit)
+                    .offset(offset)
+                )
+                if source_name:
+                    query = query.eq("source_name", source_name)
+                return query.execute()
+
+            response = await asyncio.to_thread(_do_list)
+            return response.data or []
+        except Exception as exc:
+            error_from_storage_exception(exc, operation="list_runs", details={"source_name": source_name})
+            return []
+
 
 class PostgresSourceHealthRepository(BaseSourceHealthRepository):
     """Supabase/PostgreSQL implementation of BaseSourceHealthRepository."""

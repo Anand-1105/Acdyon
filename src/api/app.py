@@ -20,6 +20,7 @@ from src.api.routes import (
     health_router,
     ingest_router,
     jobs_router,
+    logs_router,
     runs_router,
     source_health_router,
 )
@@ -99,6 +100,7 @@ def create_app() -> FastAPI:
     app.include_router(health_router)
     app.include_router(ingest_router)
     app.include_router(jobs_router)
+    app.include_router(logs_router)
     app.include_router(runs_router)
     app.include_router(source_health_router)
 
