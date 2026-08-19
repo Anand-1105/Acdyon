@@ -27,11 +27,21 @@ from src.api.routes import (
 
 
 def _get_cors_origins() -> List[str]:
-    """Retrieve allowed CORS origins from environment, defaulting to safe local origins."""
+    """Retrieve allowed CORS origins from environment, defaulting to safe local and production origins."""
     env_origins = os.getenv("CORS_ORIGINS", "")
     if env_origins.strip():
-        return [o.strip() for o in env_origins.split(",") if o.strip()]
-    return ["http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:3000", "http://127.0.0.1:5173"]
+        parsed = [o.strip() for o in env_origins.split(",") if o.strip()]
+        if "*" in parsed:
+            return ["*"]
+        return parsed
+    return [
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:5173",
+        "https://acdyon.pages.dev",
+        "https://acdyon-backend-72ph.onrender.com",
+    ]
 
 
 def create_app() -> FastAPI:
@@ -51,6 +61,7 @@ def create_app() -> FastAPI:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=origins,
+        allow_origin_regex=r"https://.*\.pages\.dev",
         allow_credentials=True,
         allow_methods=["GET", "POST", "OPTIONS"],
         allow_headers=["*"],
