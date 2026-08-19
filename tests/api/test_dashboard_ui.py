@@ -1,4 +1,4 @@
-"""Tests for Static Dashboard UI Serving and Routing Hardening."""
+"""Tests for Static Dashboard UI Serving, Routing Hardening, and Drawer UI Refinements."""
 
 from __future__ import annotations
 
@@ -69,6 +69,41 @@ class TestDashboardUIStaticServing:
             assert response.headers.get("access-control-allow-origin") == "https://acdyon.pages.dev"
         finally:
             del os.environ["CORS_ORIGINS"]
+
+
+class TestJobDrawerUIRefinements:
+    def test_app_js_contains_drawer_sanitization_and_structure(self, client):
+        response = client.get("/app.js")
+        assert response.status_code == 200
+        js = response.text
+        # Verify sanitization functions and banned tags exist
+        assert "sanitizeHtml" in js
+        assert "DOMParser" in js
+        assert "bannedTags" in js
+        assert "SCRIPT" in js
+        assert "IFRAME" in js
+        # Verify collapsible source data & raw description structures
+        assert "source-data-details" in js
+        assert "source-data-summary" in js
+        assert "formatMetadataRows" in js
+        assert "raw-desc-details" in js
+        assert "raw-desc-summary" in js
+        assert "raw-desc-pre" in js
+        # Verify format helpers
+        assert "formatEmploymentType" in js
+        assert "formatSourceName" in js
+
+    def test_styles_css_contains_drawer_typography_and_collapsible_rules(self, client):
+        response = client.get("/styles.css")
+        assert response.status_code == 200
+        css = response.text
+        assert ".job-description-content" in css
+        assert ".source-data-details" in css
+        assert ".source-data-summary" in css
+        assert ".meta-kv-grid" in css
+        assert ".meta-kv-row" in css
+        assert ".raw-desc-details" in css
+        assert ".raw-desc-pre" in css
 
 
 class TestRoutingAndErrorHardening:

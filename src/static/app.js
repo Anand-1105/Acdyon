@@ -318,6 +318,145 @@ async function triggerIngestion() {
   }
 }
 
+function formatEmploymentType(empType) {
+  if (!empType) return "Not specified";
+  const map = {
+    "full_time": "Full-Time",
+    "part_time": "Part-Time",
+    "contract": "Contract",
+    "internship": "Internship",
+    "temporary": "Temporary",
+    "unknown": "Unspecified"
+  };
+  return map[empType.toLowerCase()] || empType.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function formatSourceName(sourceName) {
+  if (!sourceName) return "Unknown";
+  if (sourceName.toLowerCase() === "weworkremotely") return "We Work Remotely";
+  return sourceName.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function sanitizeHtml(dirtyHtml) {
+  if (!dirtyHtml || typeof dirtyHtml !== "string" || !dirtyHtml.trim()) {
+    return '<p class="text-muted">No description provided.</p>';
+  }
+
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(dirtyHtml, "text/html");
+
+    // Elements to strip completely including children
+    const bannedTags = [
+      "SCRIPT", "STYLE", "IFRAME", "OBJECT", "EMBED", "APPLET", 
+      "LINK", "META", "FORM", "INPUT", "BUTTON", "SVG", "CANVAS", 
+      "BASE", "FRAME", "FRAMESET", "NOSCRIPT"
+    ];
+    bannedTags.forEach(tag => {
+      const elements = doc.querySelectorAll(tag);
+      elements.forEach(el => el.remove());
+    });
+
+    // Allowed tags set
+    const allowedTags = new Set([
+      "P", "BR", "STRONG", "B", "EM", "I", "U", "S", "STRIKE",
+      "UL", "OL", "LI", "A", "H1", "H2", "H3", "H4", "H5", "H6",
+      "BLOCKQUOTE", "PRE", "CODE", "HR", "SPAN", "DIV"
+    ]);
+
+    function cleanNode(node) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        return document.createTextNode(node.textContent);
+      }
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        const tagName = node.tagName.toUpperCase();
+        if (!allowedTags.has(tagName)) {
+          const fragment = document.createDocumentFragment();
+          node.childNodes.forEach(child => {
+            const cleaned = cleanNode(child);
+            if (cleaned) fragment.appendChild(cleaned);
+          });
+          return fragment;
+        }
+
+        const safeElement = document.createElement(tagName.toLowerCase());
+
+        // Safe attribute handling for links
+        if (tagName === "A") {
+          const rawHref = (node.getAttribute("href") || "").trim();
+          if (/^(https?:|mailto:|\/)/i.test(rawHref) && !rawHref.toLowerCase().startsWith("javascript:")) {
+            safeElement.setAttribute("href", rawHref);
+            safeElement.setAttribute("target", "_blank");
+            safeElement.setAttribute("rel", "noopener noreferrer");
+          }
+        }
+
+        // Recursively clean children
+        node.childNodes.forEach(child => {
+          const cleaned = cleanNode(child);
+          if (cleaned) safeElement.appendChild(cleaned);
+        });
+
+        return safeElement;
+      }
+      return null;
+    }
+
+    const container = document.createElement("div");
+    doc.body.childNodes.forEach(child => {
+      const cleaned = cleanNode(child);
+      if (cleaned) container.appendChild(cleaned);
+    });
+
+    const result = container.innerHTML.trim();
+    return result || '<p class="text-muted">No description provided.</p>';
+  } catch (err) {
+    console.error("HTML Sanitization failed, falling back to escaped text:", err);
+    return `<p>${escapeHtml(dirtyHtml)}</p>`;
+  }
+}
+
+function formatMetadataRows(metadata) {
+  if (!metadata || typeof metadata !== "object" || Object.keys(metadata).length === 0) {
+    return "";
+  }
+
+  const friendlyLabels = {
+    "wwr_type": "Type",
+    "wwr_region": "Region",
+    "wwr_category": "Category",
+    "channel_title": "Channel",
+    "source_type": "Source Type"
+  };
+
+  const rows = Object.entries(metadata)
+    .filter(([k, v]) => v !== null && v !== undefined && v !== "")
+    .map(([key, value]) => {
+      const label = friendlyLabels[key] || key.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const valStr = typeof value === "object" ? JSON.stringify(value) : String(value);
+      return `
+        <div class="meta-kv-row">
+          <div class="meta-kv-key">${escapeHtml(label)}</div>
+          <div class="meta-kv-val">${escapeHtml(valStr)}</div>
+        </div>
+      `;
+    })
+    .join("");
+
+  if (!rows.trim()) {
+    return "";
+  }
+
+  return `
+    <div class="drawer-field">
+      <div class="drawer-field-label">Source Metadata</div>
+      <div class="meta-kv-grid">
+        ${rows}
+      </div>
+    </div>
+  `;
+}
+
 function openJobDetail(canonicalId) {
   const job = cachedJobs.find(j => j.canonical_id === canonicalId);
   const backdrop = document.getElementById("drawer-backdrop");
@@ -344,46 +483,70 @@ function openJobDetail(canonicalId) {
 
   titleEl.textContent = job.title || "Job Details";
   const pubDate = job.published_at ? new Date(job.published_at).toLocaleString() : "N/A";
-  
+  const safeDescriptionHtml = sanitizeHtml(job.description);
+  const metadataRowsHtml = formatMetadataRows(job.metadata);
+
   body.innerHTML = `
-    <div class="drawer-field">
-      <div class="drawer-field-label">Canonical ID</div>
-      <div class="drawer-field-value mono-cell">${escapeHtml(job.canonical_id)}</div>
-    </div>
-    <div class="drawer-field">
-      <div class="drawer-field-label">Company</div>
-      <div class="drawer-field-value">${escapeHtml(job.company || "N/A")}</div>
-    </div>
-    <div class="drawer-field">
-      <div class="drawer-field-label">Location</div>
-      <div class="drawer-field-value">${escapeHtml(job.location || "N/A")}</div>
-    </div>
-    <div class="drawer-field">
-      <div class="drawer-field-label">Employment Type</div>
-      <div class="drawer-field-value">${escapeHtml(job.employment_type || "N/A")}</div>
-    </div>
-    <div class="drawer-field">
-      <div class="drawer-field-label">Published At</div>
-      <div class="drawer-field-value mono-cell">${pubDate}</div>
-    </div>
-    <div class="drawer-field">
-      <div class="drawer-field-label">Source URL</div>
-      <div class="drawer-field-value">
-        <a href="${escapeHtml(job.source_url)}" target="_blank" rel="noopener noreferrer" class="feed-link">
-          ${escapeHtml(job.source_url)} ↗
-        </a>
+    <!-- Primary Job Overview -->
+    <div class="drawer-overview-grid">
+      <div class="drawer-field">
+        <div class="drawer-field-label">Company</div>
+        <div class="drawer-field-value drawer-field-highlight">${escapeHtml(job.company || "N/A")}</div>
+      </div>
+      <div class="drawer-field">
+        <div class="drawer-field-label">Location</div>
+        <div class="drawer-field-value">${escapeHtml(job.location || "Remote")}</div>
+      </div>
+      <div class="drawer-field">
+        <div class="drawer-field-label">Employment Type</div>
+        <div class="drawer-field-value">${escapeHtml(formatEmploymentType(job.employment_type))}</div>
+      </div>
+      <div class="drawer-field">
+        <div class="drawer-field-label">Published At</div>
+        <div class="drawer-field-value mono-cell">${pubDate}</div>
       </div>
     </div>
-    <div class="drawer-field">
-      <div class="drawer-field-label">Raw Description</div>
-      <div class="drawer-field-value" style="max-height: 200px; overflow-y: auto; white-space: pre-wrap; font-size: 12px; background: var(--bg-subtle); padding: 10px; border-radius: 4px; border: 1px solid var(--border-color);">
-        ${escapeHtml(job.description || "No description")}
+
+    <!-- 1. Clean Readable Description -->
+    <div class="drawer-field drawer-desc-section">
+      <div class="drawer-field-label">Description</div>
+      <div class="job-description-content">
+        ${safeDescriptionHtml}
       </div>
     </div>
-    <div class="drawer-field">
-      <div class="drawer-field-label">Metadata & Raw Tags</div>
-      <div class="drawer-json-box">${escapeHtml(JSON.stringify(job.metadata || {}, null, 2))}</div>
-    </div>
+
+    <!-- 2. Source Data Collapsible Section -->
+    <details class="source-data-details">
+      <summary class="source-data-summary">Source Data & Technical Metadata</summary>
+      <div class="source-data-content">
+        <div class="drawer-field">
+          <div class="drawer-field-label">Source Provider</div>
+          <div class="drawer-field-value">${escapeHtml(formatSourceName(job.source_name))}</div>
+        </div>
+        <div class="drawer-field">
+          <div class="drawer-field-label">Canonical ID</div>
+          <div class="drawer-field-value mono-cell">${escapeHtml(job.canonical_id)}</div>
+        </div>
+        <div class="drawer-field">
+          <div class="drawer-field-label">Source URL</div>
+          <div class="drawer-field-value">
+            <a href="${escapeHtml(job.source_url)}" target="_blank" rel="noopener noreferrer" class="feed-link">
+              ${escapeHtml(job.source_url)} ↗
+            </a>
+          </div>
+        </div>
+
+        ${metadataRowsHtml}
+
+        <!-- 3. Nested Raw Source Description Collapsible -->
+        <details class="raw-desc-details">
+          <summary class="raw-desc-summary">Raw Source Description</summary>
+          <div class="raw-desc-content">
+            <pre class="raw-desc-pre">${escapeHtml(job.description || "No raw description available.")}</pre>
+          </div>
+        </details>
+      </div>
+    </details>
   `;
 
   backdrop.classList.remove("hidden");
@@ -402,3 +565,4 @@ function escapeHtml(str) {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 }
+

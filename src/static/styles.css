@@ -453,33 +453,189 @@ body {
   font-weight: 600;
 }
 
-.drawer-field {
-  margin-bottom: 16px;
+.drawer-overview-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 20px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-color);
 }
 
-.drawer-field-label {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-muted);
+.drawer-field-highlight {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.drawer-desc-section {
+  margin-bottom: 20px;
+}
+
+.job-description-content {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  background-color: var(--bg-subtle);
+  padding: 16px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  max-height: 380px;
+  overflow-y: auto;
+  word-break: break-word;
+}
+
+.job-description-content p {
+  margin-bottom: 12px;
+}
+
+.job-description-content p:last-child {
+  margin-bottom: 0;
+}
+
+.job-description-content ul,
+.job-description-content ol {
+  margin-left: 20px;
+  margin-bottom: 12px;
+}
+
+.job-description-content li {
   margin-bottom: 4px;
 }
 
-.drawer-field-value {
-  font-size: 13px;
+.job-description-content strong,
+.job-description-content b {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.job-description-content a {
+  color: var(--color-brand);
+  text-decoration: underline;
+  word-break: break-all;
+}
+
+.job-description-content h1,
+.job-description-content h2,
+.job-description-content h3,
+.job-description-content h4 {
+  color: var(--text-primary);
+  margin-top: 14px;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.job-description-content blockquote {
+  border-left: 3px solid var(--border-color);
+  padding-left: 12px;
+  margin: 12px 0;
+  color: var(--text-muted);
+}
+
+.source-data-details {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  margin-top: 12px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.source-data-summary {
+  padding: 10px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  user-select: none;
+  background-color: var(--bg-subtle);
+  border-bottom: 1px solid transparent;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.source-data-summary:hover {
   color: var(--text-primary);
 }
 
-.drawer-json-box {
+details[open] > .source-data-summary {
+  border-bottom-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.source-data-content {
+  padding: 16px;
+}
+
+.meta-kv-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background-color: var(--bg-app);
+  padding: 12px;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+}
+
+.meta-kv-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+
+.meta-kv-key {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.meta-kv-val {
+  color: var(--text-primary);
   font-family: var(--font-mono);
   font-size: 11px;
-  background-color: var(--bg-subtle);
+}
+
+.raw-desc-details {
+  margin-top: 16px;
   border: 1px solid var(--border-color);
   border-radius: 4px;
-  padding: 12px;
+  overflow: hidden;
+}
+
+.raw-desc-summary {
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  background-color: var(--bg-subtle);
+  transition: color 0.15s ease;
+}
+
+.raw-desc-summary:hover {
   color: var(--text-secondary);
+}
+
+details[open] > .raw-desc-summary {
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-secondary);
+}
+
+.raw-desc-pre {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  max-height: 220px;
+  overflow-y: auto;
   white-space: pre-wrap;
-  word-break: break-all;
+  word-break: break-word;
+  background-color: var(--bg-app);
+  padding: 12px;
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.5;
 }
 
 /* Stale & Offline Banners */
