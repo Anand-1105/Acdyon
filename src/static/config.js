@@ -1,4 +1,7 @@
 // Acdyon Frontend Configuration
-// For local hosting (same-origin), keep window.PUBLIC_API_BASE_URL as an empty string.
-// For Cloudflare Pages deployment, overwrite this file to point to the public Render URL.
-window.PUBLIC_API_BASE_URL = "";
+// When running locally on localhost/127.0.0.1, uses same-origin relative paths ("").
+// When deployed on Cloudflare Pages, automatically targets the live production Render backend.
+window.PUBLIC_API_BASE_URL = (
+  window.location.hostname === "localhost" ||
+  window.location.hostname === "127.0.0.1"
+) ? "" : "https://acdyon-backend-72ph.onrender.com";
