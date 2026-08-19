@@ -110,6 +110,21 @@ class PostgresJobRepository(BaseJobRepository):
             error_from_storage_exception(exc, operation="list_jobs")
             return []
 
+    async def count_jobs(self, source_name: Optional[str] = None) -> int:
+        """Count total jobs with optional source filtering."""
+        try:
+            def _do_count():
+                query = self._client.table("jobs").select("canonical_id", count="exact", head=True)
+                if source_name:
+                    query = query.eq("source_name", source_name)
+                return query.execute()
+
+            response = await asyncio.to_thread(_do_count)
+            return response.count if response.count is not None else 0
+        except Exception as exc:
+            error_from_storage_exception(exc, operation="count_jobs")
+            return 0
+
 
 class PostgresIngestionRunRepository(BaseIngestionRunRepository):
     """Supabase/PostgreSQL implementation of BaseIngestionRunRepository."""

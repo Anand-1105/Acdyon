@@ -37,11 +37,11 @@ from src.storage.base import SourceHealthRecord
 from src.storage.memory import InMemoryStorage
 
 
-def _create_sample_job(canonical_id: str) -> JobRecord:
+def _create_sample_job(canonical_id: str, source_name: str = "weworkremotely") -> JobRecord:
     return JobRecord(
         canonical_id=canonical_id,
-        source_name="weworkremotely",
-        source_url=f"https://weworkremotely.com/jobs/{canonical_id}",
+        source_name=source_name,
+        source_url=f"https://{source_name}.com/jobs/{canonical_id}",
         title="Backend Engineer",
         company="Acme Corp",
         location="Remote",
@@ -210,6 +210,23 @@ class TestJobsEndpoints:
         # Get non-existing single job -> 404
         res_404 = client.get("/api/v1/jobs/nonexistent_id")
         assert res_404.status_code == 404
+
+    @pytest.mark.asyncio
+    async def test_count_jobs(self, client, storage):
+        j1 = _create_sample_job("wwr_job_101", source_name="weworkremotely")
+        j2 = _create_sample_job("wwr_job_102", source_name="weworkremotely")
+        j3 = _create_sample_job("other_job_103", source_name="other")
+        await storage.jobs.save_jobs([j1, j2, j3])
+
+        # Total across all sources
+        res_all = client.get("/api/v1/jobs/count")
+        assert res_all.status_code == 200
+        assert res_all.json()["total"] == 3
+
+        # Filtered by source
+        res_wwr = client.get("/api/v1/jobs/count?source_name=weworkremotely")
+        assert res_wwr.status_code == 200
+        assert res_wwr.json()["total"] == 2
 
 
 class TestSourceHealthEndpoint:

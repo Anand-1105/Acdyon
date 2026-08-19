@@ -64,6 +64,12 @@ class InMemoryJobRepository(BaseJobRepository):
             all_jobs.sort(key=lambda j: j.published_at, reverse=True)
             return all_jobs[offset : offset + limit]
 
+    async def count_jobs(self, source_name: Optional[str] = None) -> int:
+        async with self._lock:
+            if not source_name:
+                return len(self._jobs)
+            return sum(1 for j in self._jobs.values() if j.source_name == source_name)
+
     async def clear(self) -> None:
         """Clear all stored jobs."""
         async with self._lock:

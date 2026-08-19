@@ -57,6 +57,16 @@ async def list_jobs(
     return [_map_job(j) for j in jobs]
 
 
+@router.get("/count", response_model=dict)
+async def count_jobs(
+    source_name: Optional[str] = Query(None, max_length=64),
+    repo: BaseJobRepository = Depends(get_job_repository),
+) -> dict:
+    """Retrieve total count of persisted job records."""
+    total = await repo.count_jobs(source_name=source_name)
+    return {"total": total}
+
+
 @router.get("/{canonical_id}", response_model=JobResponseModel)
 async def get_job(
     canonical_id: str,

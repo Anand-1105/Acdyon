@@ -96,6 +96,11 @@ class BaseJobRepository(ABC):
         """List canonical job records with optional source filtering and pagination."""
         ...
 
+    @abstractmethod
+    async def count_jobs(self, source_name: Optional[str] = None) -> int:
+        """Count total persisted canonical job records with optional source filtering."""
+        ...
+
 
 class BaseIngestionRunRepository(ABC):
     """Abstract interface for storing and retrieving ingestion run telemetry."""

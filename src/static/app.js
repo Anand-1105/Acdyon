@@ -8,7 +8,7 @@ const pageSize = 25;
 let currentTotalJobs = 0;
 let cachedJobs = [];
 let appState = "fresh"; // "fresh" | "stale" | "unavailable"
-let lastSuccessfulFetchTime = null;
+let totalPersistedJobs = 0;
 
 document.addEventListener("DOMContentLoaded", () => {
   initDashboard();
@@ -21,9 +21,25 @@ async function initDashboard() {
     return;
   }
 
+  await loadJobCount();
   await loadSourceHealth();
   await loadLatestRun();
   await loadJobs(currentPage);
+}
+
+async function loadJobCount() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/v1/jobs/count?source_name=weworkremotely`);
+    if (!res.ok) return;
+    const data = await res.json();
+    totalPersistedJobs = data.total || 0;
+    const totalEl = document.getElementById("health-total-jobs");
+    if (totalEl) {
+      totalEl.textContent = totalPersistedJobs;
+    }
+  } catch (err) {
+    console.warn("Failed to load job count:", err);
+  }
 }
 
 function setBackendUnavailableState() {
@@ -210,17 +226,25 @@ async function loadJobs(page = 1) {
       tbody.innerHTML = `
         <tr class="empty-row">
           <td colspan="6" class="text-muted text-center" style="padding: 24px;">
-            No jobs ingested yet. Click <strong>'Ingest latest jobs'</strong> above to fetch canonical postings.
+            No jobs ingested yet. Click <strong>'Ingest latest jobs'</strong> above to fetch postings.
           </td>
         </tr>
       `;
-      document.getElementById("jobs-count-tag").textContent = "0 jobs";
+      document.getElementById("jobs-count-tag").textContent = "Showing 0 jobs";
       document.getElementById("health-total-jobs").textContent = "0";
       updatePagination(0, page);
       return;
     }
 
-    document.getElementById("jobs-count-tag").textContent = `Showing ${jobs.length} jobs (Page ${page})`;
+    const startItem = offset + 1;
+    const endItem = offset + jobs.length;
+    if (totalPersistedJobs > 0) {
+      document.getElementById("jobs-count-tag").textContent = `Showing ${startItem}–${endItem} of ${totalPersistedJobs} jobs`;
+      document.getElementById("health-total-jobs").textContent = totalPersistedJobs;
+    } else {
+      document.getElementById("jobs-count-tag").textContent = `Showing ${jobs.length} jobs`;
+      document.getElementById("health-total-jobs").textContent = jobs.length;
+    }
     
     let html = "";
     jobs.forEach(job => {
@@ -242,10 +266,6 @@ async function loadJobs(page = 1) {
 
     tbody.innerHTML = html;
     updatePagination(jobs.length, page);
-
-    if (page === 1) {
-      document.getElementById("health-total-jobs").textContent = jobs.length >= pageSize ? `${jobs.length}+` : jobs.length;
-    }
   } catch (err) {
     console.error("Failed to load jobs:", err);
     if (cachedJobs.length > 0) {
@@ -343,6 +363,7 @@ async function triggerIngestion() {
     }
 
     // Refresh dashboard state after request completes
+    await loadJobCount();
     await loadSourceHealth();
     await loadLatestRun();
     await loadJobs(1);
