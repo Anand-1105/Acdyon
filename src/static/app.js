@@ -565,7 +565,7 @@ function openJobDetail(canonicalId) {
       <div class="drawer-empty-state">
         <p class="drawer-empty-title">Job record not found</p>
         <p class="drawer-empty-desc">
-          The requested canonical job record (<span class="mono-cell">${escapeHtml(canonicalId)}</span>) is not present in the current dataset or may no longer be available.
+          The requested job record (<span class="mono-cell">${escapeHtml(canonicalId)}</span>) is not present in the current dataset or may no longer be available.
         </p>
         <div style="margin-top: 16px;">
           <button class="btn btn-secondary" onclick="closeDrawer()">Return to List</button>
@@ -619,7 +619,7 @@ function openJobDetail(canonicalId) {
           <div class="drawer-field-value">${escapeHtml(formatSourceName(job.source_name))}</div>
         </div>
         <div class="drawer-field">
-          <div class="drawer-field-label">Canonical ID</div>
+          <div class="drawer-field-label">Job Reference ID</div>
           <div class="drawer-field-value mono-cell">${escapeHtml(job.canonical_id)}</div>
         </div>
         <div class="drawer-field">
