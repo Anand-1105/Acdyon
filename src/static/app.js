@@ -28,10 +28,12 @@ async function initDashboard() {
     // New device/browser opening for the first time: trigger immediate ingestion
     await triggerIngestion(true);
   } else {
-    await loadJobCount();
-    await loadSourceHealth();
-    await loadLatestRun();
-    await loadJobs(currentPage);
+    await Promise.all([
+      loadJobCount(),
+      loadSourceHealth(),
+      loadLatestRun(),
+      loadJobs(currentPage)
+    ]);
   }
 }
 
@@ -372,11 +374,13 @@ async function triggerIngestion(isAuto = false) {
       errorMessage.textContent = `Ingestion completed with partial success: ${accepted} accepted, ${rejected} rejected due to record-level errors.`;
     }
 
-    // Refresh dashboard state after request completes
-    await loadJobCount();
-    await loadSourceHealth();
-    await loadLatestRun();
-    await loadJobs(1);
+    // Refresh dashboard state concurrently in parallel
+    await Promise.all([
+      loadJobCount(),
+      loadSourceHealth(),
+      loadLatestRun(),
+      loadJobs(1)
+    ]);
 
     // Set freshness timestamp to the moment of completion
     const lastSuccessEl = document.getElementById("health-last-success");
