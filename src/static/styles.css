@@ -1027,7 +1027,8 @@ details[open] > .raw-desc-summary {
   border: 1px solid var(--border-color);
   border-radius: 6px;
   padding: 12px 18px;
-  margin-top: 28px;
+  margin-top: 0;
+  margin-bottom: 24px;
   display: flex;
   align-items: center;
   gap: 12px;

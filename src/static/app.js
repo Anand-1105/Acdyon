@@ -342,7 +342,7 @@ async function triggerIngestion(isAuto = false) {
   errorBanner.classList.add("hidden");
   btn.disabled = true;
   btn.dataset.busy = "true";
-  btn.textContent = "Ingesting...";
+  btn.textContent = "Cooking up jobs (ETA ~3-5s)...";
 
   try {
     const res = await fetch(API_BASE_URL + "/api/v1/ingest", {
@@ -711,53 +711,46 @@ function renderTimeline(runs) {
   const container = document.getElementById("logs-timeline-bar");
   if (!container) return;
 
-  const now = Date.now();
-  const oneHourMs = 3600 * 1000;
-  const numBuckets = 24;
+  const maxSlots = 24;
   let html = "";
 
-  for (let i = numBuckets - 1; i >= 0; i--) {
-    const bucketStart = now - (i + 1) * oneHourMs;
-    const bucketEnd = now - i * oneHourMs;
-    const startTimeStr = new Date(bucketStart).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+  // Show up to the 24 most recent runs, ordered chronologically from oldest (left) to newest (right)
+  const recentRuns = runs.slice(0, maxSlots).reverse();
+  const emptySlotsCount = Math.max(0, maxSlots - recentRuns.length);
 
-    const runsInBucket = runs.filter(r => {
-      const runTime = new Date(r.started_at || r.created_at).getTime();
-      return runTime >= bucketStart && runTime < bucketEnd;
-    });
-
-    if (runsInBucket.length === 0) {
-      html += `
-        <div class="timeline-seg seg-empty" title="${startTimeStr} UTC: No recorded events" tabindex="0" role="img" aria-label="${startTimeStr} UTC: No recorded events"></div>
-      `;
-    } else {
-      const hasFailed = runsInBucket.some(r => r.status === "failed");
-      const hasPartial = runsInBucket.some(r => r.status === "partial_success");
-      
-      let segClass = "seg-success";
-      let statusLabel = "SUCCESS";
-
-      if (hasFailed) {
-        segClass = "seg-failed";
-        statusLabel = "FAILED";
-      } else if (hasPartial) {
-        segClass = "seg-partial";
-        statusLabel = "DEGRADED / PARTIAL";
-      }
-
-      const totalAccepted = runsInBucket.reduce((acc, r) => acc + (r.records_accepted || 0), 0);
-      const latestRunId = runsInBucket[0].run_id;
-
-      html += `
-        <div class="timeline-seg ${segClass}" 
-             title="${startTimeStr} UTC: ${statusLabel} (${runsInBucket.length} run${runsInBucket.length > 1 ? 's' : ''}, ${totalAccepted} accepted)" 
-             onclick="openLogDetail('${escapeHtml(latestRunId)}')"
-             tabindex="0"
-             role="button"
-             aria-label="${startTimeStr} UTC: ${statusLabel}"></div>
-      `;
-    }
+  // 1. Render empty placeholder slots on the left
+  for (let i = 0; i < emptySlotsCount; i++) {
+    html += `
+      <div class="timeline-seg seg-empty" title="Slot ${i + 1}: No recorded event" tabindex="0" role="img" aria-label="No recorded event"></div>
+    `;
   }
+
+  // 2. Render each real discrete run slot
+  recentRuns.forEach((run, index) => {
+    let segClass = "seg-success";
+    let statusLabel = "SUCCESS";
+
+    if (run.status === "failed") {
+      segClass = "seg-failed";
+      statusLabel = "FAILED";
+    } else if (run.status === "partial_success") {
+      segClass = "seg-partial";
+      statusLabel = "DEGRADED / PARTIAL";
+    }
+
+    const timeStr = run.started_at ? new Date(run.started_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'medium' }) : "N/A";
+    const acceptedCount = run.records_accepted || 0;
+    const durationMs = run.duration_ms || 0;
+
+    html += `
+      <div class="timeline-seg ${segClass}" 
+           title="Run ${escapeHtml(run.run_id)} · ${escapeHtml(timeStr)} · ${statusLabel} (${acceptedCount} accepted, ${durationMs}ms)" 
+           onclick="openLogDetail('${escapeHtml(run.run_id)}')"
+           tabindex="0"
+           role="button"
+           aria-label="${escapeHtml(timeStr)}: ${statusLabel}"></div>
+    `;
+  });
 
   container.innerHTML = html;
 }

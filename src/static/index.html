@@ -39,6 +39,12 @@
 
     <!-- Main Content Area -->
     <div class="app-content-wrapper">
+      <!-- Persistent Browser Advisory Note (At Top) -->
+      <section class="browser-notice-card" aria-label="Browser Compatibility Note">
+        <span class="notice-tag">NOTE</span>
+        <span class="notice-text">If using Brave browser, kindly turn the shield off (lion icon at the right end of the URL bar). If requests are being interrupted, use incognito mode. Happy applying!</span>
+      </section>
+
       <!-- 1. PRIMARY DASHBOARD VIEW -->
       <main class="app-main content-view" id="view-dashboard">
         <!-- Operational Control & Source Health Panel -->
@@ -151,7 +157,7 @@
               </thead>
               <tbody id="jobs-tbody">
                 <tr class="empty-row">
-                  <td colspan="6" class="text-muted text-center">Loading jobs...</td>
+                  <td colspan="6" class="text-muted text-center" style="padding: 28px;">Cooking up jobs for you... (ETA ~3-5 seconds)</td>
                 </tr>
               </tbody>
             </table>
@@ -224,12 +230,6 @@
           </div>
         </section>
       </main>
-
-      <!-- Persistent Browser Advisory Note -->
-      <section class="browser-notice-card" aria-label="Browser Compatibility Note">
-        <span class="notice-tag">NOTE</span>
-        <span class="notice-text">If using Brave browser, kindly turn the shield off (lion icon at the right end of the URL bar). If requests are being interrupted, use incognito mode. Happy applying!</span>
-      </section>
 
       <!-- Footer -->
       <footer class="app-footer">
