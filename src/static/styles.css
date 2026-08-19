@@ -665,6 +665,20 @@ details[open] > .raw-desc-summary {
   color: var(--status-unreachable-text);
 }
 
+.rate-limit-banner {
+  background-color: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: #93c5fd;
+  line-height: 1.4;
+}
+
 /* 404 Not Found Page */
 .not-found-main {
   display: flex;

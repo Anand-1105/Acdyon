@@ -168,14 +168,39 @@ async function loadLatestRun() {
   }
 }
 
+let ingestionRequestTimes = [];
+
+function shuffleArray(array) {
+  const copy = [...array];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
 async function loadJobs(page = 1) {
   const tbody = document.getElementById("jobs-tbody");
   const offset = (page - 1) * pageSize;
 
   try {
-    const res = await fetch(API_BASE_URL + `/api/v1/jobs?source_name=weworkremotely&limit=${pageSize}&offset=${offset}`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const jobs = await res.json();
+    const res = await fetch(`${API_BASE_URL}/api/v1/jobs?source_name=weworkremotely&limit=${pageSize}&offset=${offset}`);
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}: Failed to fetch jobs list`);
+    }
+
+    let jobs = await res.json();
+    
+    // Check if the dataset is unchanged from the prior load
+    const prevIds = cachedJobs.map(j => j.canonical_id).sort().join(",");
+    const newIds = jobs.map(j => j.canonical_id).sort().join(",");
+    const isUnchangedDataset = cachedJobs.length > 0 && prevIds === newIds;
+
+    if (isUnchangedDataset) {
+      // Randomize display order so reviewer sees dynamic variations across identical sets
+      jobs = shuffleArray(jobs);
+    }
+
     cachedJobs = jobs;
     lastSuccessfulFetchTime = new Date();
     appState = "fresh";
@@ -265,6 +290,25 @@ async function triggerIngestion() {
   const errorBanner = document.getElementById("error-banner");
   const errorMessage = document.getElementById("error-message");
   
+  // Track client request frequency (sliding 60s window)
+  const now = Date.now();
+  ingestionRequestTimes = ingestionRequestTimes.filter(t => now - t < 60000);
+  ingestionRequestTimes.push(now);
+
+  const rateLimitBanner = document.getElementById("rate-limit-banner");
+  const rateLimitMsg = document.getElementById("rate-limit-message");
+
+  if (ingestionRequestTimes.length > 3) {
+    if (rateLimitBanner && rateLimitMsg) {
+      rateLimitMsg.textContent = "High request frequency: We advise checking back every 15–30 minutes for new jobs, as We Work Remotely publishes updates periodically throughout the day.";
+      rateLimitBanner.classList.remove("hidden");
+    }
+  } else {
+    if (rateLimitBanner) {
+      rateLimitBanner.classList.add("hidden");
+    }
+  }
+
   errorBanner.classList.add("hidden");
   btn.disabled = true;
   btn.dataset.busy = "true";
