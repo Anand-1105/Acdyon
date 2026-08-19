@@ -351,7 +351,7 @@ async function triggerIngestion() {
     console.error("Ingestion failed:", err);
     errorBanner.classList.remove("hidden");
     const friendlyMsg = (err.message === "Failed to fetch") 
-      ? "Unable to reach the backend service. Please check network connectivity or backend availability."
+      ? "Too many requests received. Please wait a moment before triggering ingestion again."
       : (err.message || "Failed to complete ingestion request.");
     errorMessage.textContent = friendlyMsg;
     if (cachedJobs.length > 0) {
