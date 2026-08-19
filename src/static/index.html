@@ -88,6 +88,18 @@
         </div>
       </section>
 
+      <!-- Backend Unavailable Banner (Conditional) -->
+      <section class="offline-banner hidden" id="offline-banner">
+        <span>⚠️</span>
+        <span id="offline-message">Backend service is currently unavailable. Live job data cannot be loaded and ingestion cannot be triggered.</span>
+      </section>
+
+      <!-- Stale Data Banner (Conditional) -->
+      <section class="stale-banner hidden" id="stale-banner">
+        <span>⏱️</span>
+        <span id="stale-message">Data may be stale · Failed to refresh latest postings</span>
+      </section>
+
       <!-- Error Diagnostics Banner (Conditional) -->
       <section class="error-banner hidden" id="error-banner">
         <span class="error-title">Operational Warning</span>

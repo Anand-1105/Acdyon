@@ -7,16 +7,65 @@ let currentPage = 1;
 const pageSize = 25;
 let currentTotalJobs = 0;
 let cachedJobs = [];
+let appState = "fresh"; // "fresh" | "stale" | "unavailable"
+let lastSuccessfulFetchTime = null;
 
 document.addEventListener("DOMContentLoaded", () => {
   initDashboard();
 });
 
 async function initDashboard() {
-  await checkApiHealth();
+  const isOnline = await checkApiHealth();
+  if (!isOnline) {
+    setBackendUnavailableState();
+    return;
+  }
+
   await loadSourceHealth();
   await loadLatestRun();
   await loadJobs(currentPage);
+}
+
+function setBackendUnavailableState() {
+  appState = "unavailable";
+  const offlineBanner = document.getElementById("offline-banner");
+  if (offlineBanner) {
+    offlineBanner.classList.remove("hidden");
+  }
+
+  const btnIngest = document.getElementById("btn-ingest");
+  if (btnIngest) {
+    btnIngest.disabled = true;
+    btnIngest.title = "Backend service unavailable";
+  }
+
+  const healthStatusEl = document.getElementById("health-status-value");
+  if (healthStatusEl) {
+    healthStatusEl.textContent = "UNAVAILABLE";
+    healthStatusEl.className = "text-muted";
+  }
+
+  const healthSuccessEl = document.getElementById("health-last-success");
+  if (healthSuccessEl) {
+    healthSuccessEl.textContent = "—";
+  }
+
+  const runStatusEl = document.getElementById("telemetry-status");
+  if (runStatusEl) {
+    runStatusEl.textContent = "UNAVAILABLE";
+    runStatusEl.className = "text-muted";
+  }
+
+  const tbody = document.getElementById("jobs-tbody");
+  if (tbody) {
+    tbody.innerHTML = `
+      <tr class="empty-row">
+        <td colspan="6" class="text-muted text-center text-unreachable" style="padding: 24px;">
+          Backend service unavailable. Unable to retrieve job records.
+        </td>
+      </tr>
+    `;
+  }
 }
 
 async function checkApiHealth() {
@@ -27,13 +76,37 @@ async function checkApiHealth() {
     if (res.ok) {
       dot.className = "status-indicator online";
       label.textContent = "API: Online";
+      const offlineBanner = document.getElementById("offline-banner");
+      if (offlineBanner) offlineBanner.classList.add("hidden");
+      const btnIngest = document.getElementById("btn-ingest");
+      if (btnIngest && !btnIngest.dataset.busy) {
+        btnIngest.disabled = false;
+        btnIngest.title = "";
+      }
+      return true;
     } else {
       dot.className = "status-indicator offline";
       label.textContent = "API: Degrading";
+      return false;
     }
   } catch (err) {
     dot.className = "status-indicator offline";
     label.textContent = "API: Offline";
+    return false;
+  }
+}
+
+function updateStaleIndicator() {
+  const staleBanner = document.getElementById("stale-banner");
+  const staleMessage = document.getElementById("stale-message");
+  if (!staleBanner || !staleMessage) return;
+
+  if (appState === "stale" && cachedJobs.length > 0) {
+    const timeStr = lastSuccessfulFetchTime ? lastSuccessfulFetchTime.toLocaleTimeString() : "earlier";
+    staleMessage.textContent = `Data may be stale · Last updated at ${timeStr} · Latest refresh failed`;
+    staleBanner.classList.remove("hidden");
+  } else {
+    staleBanner.classList.add("hidden");
   }
 }
 
@@ -70,6 +143,10 @@ async function loadSourceHealth() {
     }
   } catch (err) {
     console.warn("Failed to load source health:", err);
+    if (cachedJobs.length > 0) {
+      appState = "stale";
+      updateStaleIndicator();
+    }
   }
 }
 
@@ -100,6 +177,9 @@ async function loadJobs(page = 1) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const jobs = await res.json();
     cachedJobs = jobs;
+    lastSuccessfulFetchTime = new Date();
+    appState = "fresh";
+    updateStaleIndicator();
 
     if (jobs.length === 0) {
       tbody.innerHTML = `
@@ -115,13 +195,11 @@ async function loadJobs(page = 1) {
       return;
     }
 
-    // Estimate count or update tag
     document.getElementById("jobs-count-tag").textContent = `Showing ${jobs.length} jobs (Page ${page})`;
     
     let html = "";
     jobs.forEach(job => {
       const pubDate = job.published_at ? new Date(job.published_at).toLocaleDateString() : "Unknown";
-      const sourceUrl = job.source_url || "#";
 
       html += `
         <tr>
@@ -131,7 +209,7 @@ async function loadJobs(page = 1) {
           <td class="mono-cell">${pubDate}</td>
           <td class="mono-cell">We Work Remotely</td>
           <td class="text-right">
-            <button class="btn-link" onclick="openJobDetail('${job.canonical_id}')">Details</button>
+            <button class="btn-link" onclick="openJobDetail('${escapeHtml(job.canonical_id)}')">Details</button>
           </td>
         </tr>
       `;
@@ -140,19 +218,24 @@ async function loadJobs(page = 1) {
     tbody.innerHTML = html;
     updatePagination(jobs.length, page);
 
-    // Update total count indicator from latest fetch
     if (page === 1) {
       document.getElementById("health-total-jobs").textContent = jobs.length >= pageSize ? `${jobs.length}+` : jobs.length;
     }
   } catch (err) {
     console.error("Failed to load jobs:", err);
-    tbody.innerHTML = `
-      <tr class="empty-row">
-        <td colspan="6" class="text-muted text-center text-unreachable" style="padding: 24px;">
-          Failed to load jobs: ${escapeHtml(err.message)}
-        </td>
-      </tr>
-    `;
+    if (cachedJobs.length > 0) {
+      // Retain previously loaded data and mark as stale
+      appState = "stale";
+      updateStaleIndicator();
+    } else {
+      tbody.innerHTML = `
+        <tr class="empty-row">
+          <td colspan="6" class="text-muted text-center text-unreachable" style="padding: 24px;">
+            Failed to load jobs: ${escapeHtml(err.message)}
+          </td>
+        </tr>
+      `;
+    }
   }
 }
 
@@ -184,6 +267,7 @@ async function triggerIngestion() {
   
   errorBanner.classList.add("hidden");
   btn.disabled = true;
+  btn.dataset.busy = "true";
   btn.textContent = "Ingesting...";
 
   try {
@@ -203,6 +287,15 @@ async function triggerIngestion() {
       errorBanner.classList.remove("hidden");
       const errText = (data.errors && data.errors.length > 0) ? data.errors[0].message : "Ingestion run failed.";
       errorMessage.textContent = `Ingestion run status: FAILED. Reason: ${errText}`;
+      if (cachedJobs.length > 0) {
+        appState = "stale";
+        updateStaleIndicator();
+      }
+    } else if (data.status === "partial_success") {
+      errorBanner.classList.remove("hidden");
+      const accepted = data.stats ? data.stats.records_accepted : 0;
+      const rejected = data.stats ? data.stats.records_rejected : 0;
+      errorMessage.textContent = `Ingestion completed with partial success: ${accepted} accepted, ${rejected} rejected due to record-level errors.`;
     }
 
     // Refresh dashboard state after request completes
@@ -213,20 +306,43 @@ async function triggerIngestion() {
   } catch (err) {
     console.error("Ingestion failed:", err);
     errorBanner.classList.remove("hidden");
-    errorMessage.textContent = err.message;
+    errorMessage.textContent = err.message || "Failed to complete ingestion request.";
+    if (cachedJobs.length > 0) {
+      appState = "stale";
+      updateStaleIndicator();
+    }
   } finally {
     btn.disabled = false;
+    delete btn.dataset.busy;
     btn.textContent = "Ingest latest jobs";
   }
 }
 
 function openJobDetail(canonicalId) {
   const job = cachedJobs.find(j => j.canonical_id === canonicalId);
-  if (!job) return;
-
-  document.getElementById("drawer-job-title").textContent = job.title || "Job Details";
-  
+  const backdrop = document.getElementById("drawer-backdrop");
+  const titleEl = document.getElementById("drawer-job-title");
   const body = document.getElementById("drawer-body");
+
+  if (!job) {
+    // Missing job record state
+    titleEl.textContent = "Job Not Found";
+    body.innerHTML = `
+      <div class="drawer-empty-state">
+        <p class="drawer-empty-title">Job record not found</p>
+        <p class="drawer-empty-desc">
+          The requested canonical job record (<span class="mono-cell">${escapeHtml(canonicalId)}</span>) is not present in the current dataset or may no longer be available.
+        </p>
+        <div style="margin-top: 16px;">
+          <button class="btn btn-secondary" onclick="closeDrawer()">Return to List</button>
+        </div>
+      </div>
+    `;
+    backdrop.classList.remove("hidden");
+    return;
+  }
+
+  titleEl.textContent = job.title || "Job Details";
   const pubDate = job.published_at ? new Date(job.published_at).toLocaleString() : "N/A";
   
   body.innerHTML = `
@@ -270,7 +386,7 @@ function openJobDetail(canonicalId) {
     </div>
   `;
 
-  document.getElementById("drawer-backdrop").classList.remove("hidden");
+  backdrop.classList.remove("hidden");
 }
 
 function closeDrawer() {
