@@ -1,0 +1,3 @@
+This is NOT valid XML at all.
+<<broken < > &unclosed entity
+No XML declaration, no root element, just noise.

@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:media="http://search.yahoo.com/mrss">
+  <channel>
+    <title>We Work Remotely: Remote jobs</title>
+    <link>https://weworkremotely.com/remote-jobs.rss</link>
+    <description>Test feed with edge case items</description>
+    <language>en-US</language>
+    <ttl>60</ttl>
+
+    <!-- CASE 1: Item with ALL optional fields missing (only title, link, guid, pubDate) -->
+    <item>
+      <title>MissingFields Co: Minimal Job Posting</title>
+      <guid>https://weworkremotely.com/remote-jobs/missingfields-co-minimal</guid>
+      <link>https://weworkremotely.com/remote-jobs/missingfields-co-minimal</link>
+      <pubDate>Fri, 15 Aug 2026 12:00:00 +0000</pubDate>
+      <!-- No description, no category, no type, no region -->
+    </item>
+
+    <!-- CASE 2: Item missing <guid> but has <link> -->
+    <item>
+      <title>NoGuid Company: Backend Role</title>
+      <link>https://weworkremotely.com/remote-jobs/noguid-company-backend-role</link>
+      <description>&lt;p&gt;A backend role with no GUID.&lt;/p&gt;</description>
+      <pubDate>Sat, 16 Aug 2026 08:00:00 +0000</pubDate>
+      <category>Programming</category>
+      <type>Full-Time</type>
+    </item>
+
+    <!-- CASE 3: Item with a malformed pubDate (invalid format) — should be rejected -->
+    <item>
+      <title>DateBroken Inc: QA Engineer</title>
+      <guid>https://weworkremotely.com/remote-jobs/datebroken-inc-qa-engineer</guid>
+      <link>https://weworkremotely.com/remote-jobs/datebroken-inc-qa-engineer</link>
+      <description>&lt;p&gt;QA role with malformed date.&lt;/p&gt;</description>
+      <pubDate>TOTALLY NOT A DATE FORMAT</pubDate>
+      <category>All Other Remote</category>
+      <type>Full-Time</type>
+    </item>
+
+    <!-- CASE 4: Item with no <title> element — should be rejected -->
+    <item>
+      <guid>https://weworkremotely.com/remote-jobs/no-title-item</guid>
+      <link>https://weworkremotely.com/remote-jobs/no-title-item</link>
+      <description>&lt;p&gt;This item has no title.&lt;/p&gt;</description>
+      <pubDate>Sun, 17 Aug 2026 10:00:00 +0000</pubDate>
+    </item>
+
+    <!-- CASE 5: Item with no <link> and no <guid> — should be rejected -->
+    <item>
+      <title>NoURL Corp: Marketing Manager</title>
+      <description>&lt;p&gt;This item has no link or guid.&lt;/p&gt;</description>
+      <pubDate>Sun, 17 Aug 2026 11:00:00 +0000</pubDate>
+      <category>Marketing</category>
+    </item>
+
+    <!-- CASE 6: Item where title has no colon separator — should be rejected (no company) -->
+    <item>
+      <title>Senior Software Engineer at Some Company</title>
+      <guid>https://weworkremotely.com/remote-jobs/no-separator-title</guid>
+      <link>https://weworkremotely.com/remote-jobs/no-separator-title</link>
+      <description>&lt;p&gt;Title has no colon separator.&lt;/p&gt;</description>
+      <pubDate>Mon, 18 Aug 2026 09:00:00 +0000</pubDate>
+      <type>Full-Time</type>
+    </item>
+
+    <!-- CASE 7: One valid item alongside all the above invalid ones -->
+    <item>
+      <title>ValidCompany: Valid Job Title</title>
+      <guid>https://weworkremotely.com/remote-jobs/validcompany-valid-job</guid>
+      <link>https://weworkremotely.com/remote-jobs/validcompany-valid-job</link>
+      <description>&lt;p&gt;This is a fully valid item alongside broken siblings.&lt;/p&gt;</description>
+      <pubDate>Mon, 18 Aug 2026 10:00:00 +0000</pubDate>
+      <category>Programming</category>
+      <type>Part-Time</type>
+      <region>Anywhere in the World</region>
+    </item>
+
+  </channel>
+</rss>

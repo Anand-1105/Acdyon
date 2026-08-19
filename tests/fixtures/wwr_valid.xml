@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:media="http://search.yahoo.com/mrss">
+  <channel>
+    <title>We Work Remotely: Remote jobs in design, programming, marketing and more</title>
+    <link>https://weworkremotely.com/remote-jobs.rss</link>
+    <description>We Work Remotely: Remote jobs in design, programming, marketing and more</description>
+    <language>en-US</language>
+    <ttl>60</ttl>
+
+    <item>
+      <title>Acme Corp: Senior Backend Engineer</title>
+      <region>Anywhere in the World</region>
+      <country></country>
+      <state></state>
+      <skills></skills>
+      <category>Programming</category>
+      <type>Full-Time</type>
+      <description>&lt;p&gt;&lt;strong&gt;Headquarters:&lt;/strong&gt; San Francisco, CA&lt;/p&gt;&lt;p&gt;We are looking for a senior backend engineer to join our team. You will work on distributed systems and APIs.&lt;/p&gt;&lt;p&gt;&lt;strong&gt;To apply:&lt;/strong&gt; &lt;a href="https://weworkremotely.com/remote-jobs/acme-corp-senior-backend-engineer"&gt;https://weworkremotely.com/remote-jobs/acme-corp-senior-backend-engineer&lt;/a&gt;&lt;/p&gt;</description>
+      <pubDate>Mon, 17 Aug 2026 09:00:00 +0000</pubDate>
+      <expires_at>Wed, 16 Sep 2026 09:00:00 +0000</expires_at>
+      <guid>https://weworkremotely.com/remote-jobs/acme-corp-senior-backend-engineer</guid>
+      <link>https://weworkremotely.com/remote-jobs/acme-corp-senior-backend-engineer</link>
+    </item>
+
+    <item>
+      <title>Beta Inc: Product Designer</title>
+      <region>USA Only</region>
+      <country>United States</country>
+      <state>California</state>
+      <skills>Figma, Sketch</skills>
+      <category>Design</category>
+      <type>Contract</type>
+      <description>&lt;p&gt;Beta Inc is seeking a talented product designer to help shape our user experience.&lt;/p&gt;&lt;p&gt;&lt;strong&gt;To apply:&lt;/strong&gt; &lt;a href="https://weworkremotely.com/remote-jobs/beta-inc-product-designer"&gt;https://weworkremotely.com/remote-jobs/beta-inc-product-designer&lt;/a&gt;&lt;/p&gt;</description>
+      <pubDate>Mon, 17 Aug 2026 10:30:00 +0000</pubDate>
+      <expires_at>Wed, 16 Sep 2026 10:30:00 +0000</expires_at>
+      <guid>https://weworkremotely.com/remote-jobs/beta-inc-product-designer</guid>
+      <link>https://weworkremotely.com/remote-jobs/beta-inc-product-designer</link>
+    </item>
+
+    <item>
+      <title>Gamma LLC: DevOps Engineer</title>
+      <region>Europe Only</region>
+      <country></country>
+      <state></state>
+      <skills>AWS, Terraform, Kubernetes</skills>
+      <category>Devops / Sysadmin</category>
+      <type>Full-Time</type>
+      <description>&lt;p&gt;Join Gamma LLC as a DevOps Engineer and help us build robust infrastructure.&lt;/p&gt;&lt;p&gt;&lt;strong&gt;To apply:&lt;/strong&gt; &lt;a href="https://weworkremotely.com/remote-jobs/gamma-llc-devops-engineer"&gt;https://weworkremotely.com/remote-jobs/gamma-llc-devops-engineer&lt;/a&gt;&lt;/p&gt;</description>
+      <pubDate>Tue, 18 Aug 2026 08:00:00 +0000</pubDate>
+      <expires_at>Thu, 17 Sep 2026 08:00:00 +0000</expires_at>
+      <guid>https://weworkremotely.com/remote-jobs/gamma-llc-devops-engineer</guid>
+      <link>https://weworkremotely.com/remote-jobs/gamma-llc-devops-engineer</link>
+    </item>
+
+  </channel>
+</rss>

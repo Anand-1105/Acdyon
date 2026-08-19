@@ -1,0 +1,36 @@
+# Git and secrets
+.git
+.gitignore
+.env
+.env.*
+
+# Python artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.toast
+.esmtp_queue
+*.egg-info/
+dist/
+build/
+
+# Test and coverage artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+tests/
+scratch/
+
+# IDE and OS settings
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,23 @@
+# Python & Environment
+.env
+.env.local
+.env.*.local
+*.pyc
+__pycache__/
+*.egg-info/
+dist/
+build/
+.venv/
+env/
+venv/
+
+# Pytest & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
