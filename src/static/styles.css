@@ -1021,9 +1021,43 @@ details[open] > .raw-desc-summary {
   display: none !important;
 }
 
+/* Persistent Browser Advisory Card */
+.browser-notice-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 12px 18px;
+  margin-top: 28px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.notice-tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background-color: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.notice-text {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
 /* Footer */
 .app-footer {
-  margin-top: 32px;
+  margin-top: 20px;
   padding-top: 16px;
   border-top: 1px solid var(--border-subtle);
   display: flex;
