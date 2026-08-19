@@ -344,7 +344,7 @@ async function triggerIngestion(isAuto = false) {
   errorBanner.classList.add("hidden");
   btn.disabled = true;
   btn.dataset.busy = "true";
-  btn.textContent = "Cooking up jobs (ETA ~3-5s)...";
+  btn.textContent = "Ingesting jobs...";
 
   try {
     const res = await fetch(API_BASE_URL + "/api/v1/ingest", {
